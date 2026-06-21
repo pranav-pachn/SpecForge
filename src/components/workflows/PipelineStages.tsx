@@ -4,7 +4,7 @@ import { Check, CircleDot, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function PipelineStages({ currentStatus }: { currentStatus: WorkflowStatus }) {
-  const currentIndex = WORKFLOW_PIPELINE_STAGES.indexOf(currentStatus);
+  const currentIndex = WORKFLOW_PIPELINE_STAGES.indexOf(currentStatus as any);
 
   return (
     <div className="w-full py-6">
