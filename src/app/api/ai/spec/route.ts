@@ -5,6 +5,7 @@ import { aiConfig } from "@/lib/ai/config";
 import { SPEC_GENERATION_SYSTEM_PROMPT } from "@/lib/ai/prompts";
 import { ArtifactVersionStatus, WorkflowStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
+import { logEvent } from "@/lib/instrumentation";
 
 export const maxDuration = 60; // 60 seconds max duration for Vercel
 
@@ -76,6 +77,12 @@ Please generate the product-ready feature specification using the required 12-se
     await db.workflow.update({
       where: { id: workflowId },
       data: { status: WorkflowStatus.SPEC_REVIEW },
+    });
+
+    logEvent("SPEC_GENERATED", {
+      workflowId,
+      userId: user.id,
+      metadata: { targetTool }
     });
 
     return jsonResponse(updatedVersion);

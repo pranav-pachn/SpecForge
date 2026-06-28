@@ -56,16 +56,37 @@ export async function POST(
 
     const newVersionNum = latestVersion ? latestVersion.version + 1 : 1;
 
-    const newVersion = await db.artifactVersion.create({
-      data: {
-        artifactId: params.id,
-        version: newVersionNum,
-        content,
-      },
+    const newVersion = await db.$transaction(async (tx) => {
+      // Mark old version as superseded
+      if (latestVersion) {
+        await tx.artifactVersion.update({
+          where: { id: latestVersion.id },
+          data: { status: "SUPERSEDED" },
+        });
+      }
+
+      // Create new version
+      const created = await tx.artifactVersion.create({
+        data: {
+          artifactId: params.id,
+          version: newVersionNum,
+          content,
+        },
+      });
+
+      return created;
     });
+
+    // Run drift engine after transaction
+    if (latestVersion) {
+      // Import dynamically to avoid circular dependencies or just normal import
+      const { handleArtifactDrift } = await import("@/lib/drift-engine");
+      await handleArtifactDrift(artifact.workflowId, artifact.type, latestVersion.id, newVersion.id);
+    }
 
     return jsonResponse(newVersion, 201);
   } catch (error) {
+    console.error("Failed to create version", error);
     return apiError("Failed to create version", 500);
   }
 }

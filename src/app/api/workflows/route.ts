@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { getAuthenticatedUser, jsonResponse, apiError } from "@/lib/api-helpers";
 import { WorkflowStatus, ArtifactType, ArtifactVersionStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
+import { logEvent } from "@/lib/instrumentation";
 
 export async function GET(req: NextRequest) {
   const user = await getAuthenticatedUser();
@@ -15,6 +16,16 @@ export async function GET(req: NextRequest) {
       where: {
         creatorId: user.id,
         ...(status ? { status } : {}),
+      },
+      include: {
+        artifacts: {
+          include: {
+            versions: {
+              orderBy: { version: "desc" },
+              take: 1, // Only need latest version to check status
+            },
+          },
+        },
       },
       orderBy: { updatedAt: "desc" },
     });
@@ -77,6 +88,13 @@ export async function POST(req: NextRequest) {
       });
 
       return newWorkflow;
+    });
+
+    // Log the event without awaiting
+    logEvent("WORKFLOW_CREATED", { 
+      workflowId: workflow.id, 
+      userId: user.id,
+      metadata: { name }
     });
 
     return jsonResponse(workflow, 201);

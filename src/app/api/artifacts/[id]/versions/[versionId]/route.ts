@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { getAuthenticatedUser, jsonResponse, apiError } from "@/lib/api-helpers";
 import { ArtifactVersionStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
+import { logEvent } from "@/lib/instrumentation";
 
 export async function GET(
   req: NextRequest,
@@ -57,6 +58,21 @@ export async function PATCH(
         ...(status ? { status: status as ArtifactVersionStatus } : {}),
       },
     });
+
+    if (status && status !== version.status) {
+      if (status === "APPROVED" && version.artifact.type === "SPEC") {
+        logEvent("SPEC_APPROVED", {
+          workflowId: version.artifact.workflowId,
+          userId: user.id
+        });
+      } else if (status === "STALE") {
+        logEvent("STALE_ARTIFACT_TRIGGERED", {
+          workflowId: version.artifact.workflowId,
+          userId: user.id,
+          metadata: { artifactId: params.id, versionId: params.versionId }
+        });
+      }
+    }
 
     return jsonResponse(updated);
   } catch (error) {

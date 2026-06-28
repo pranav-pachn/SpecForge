@@ -174,6 +174,7 @@ model ClarificationQuestion {
   id        String              @id @default(cuid())
   versionId String
   question  String
+  category  String?
   status    ClarificationStatus @default(OPEN)
   createdAt DateTime            @default(now())
 
@@ -191,22 +192,25 @@ model ClarificationAnswer {
 }
 
 model Task {
-  id          String     @id @default(cuid())
-  workflowId  String
-  versionId   String
-  title       String
-  description String?    @db.Text
-  status      TaskStatus @default(TODO)
-  priority    Int?
-  order       Int        @default(0)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id                 String     @id @default(cuid())
+  workflowId         String
+  versionId          String
+  title              String
+  description        String?    @db.Text
+  acceptanceCriteria String?    @db.Text
+  verificationNotes  String?    @db.Text
+  status             TaskStatus @default(TODO)
+  priority           Int?
+  order              Int        @default(0)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
 
   workflow Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   version  ArtifactVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
 
   dependencies TaskDependency[] @relation("DependentTasks")
   dependsOn    TaskDependency[] @relation("TaskDependencies")
+  executionPacks ExecutionPack[]
 }
 
 model TaskDependency {
@@ -223,11 +227,13 @@ model TaskDependency {
 model ExecutionPack {
   id        String   @id @default(cuid())
   versionId String
+  taskId    String?
   toolName  ToolName
   content   String   @db.Text
   createdAt DateTime @default(now())
 
   version ArtifactVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  task    Task?           @relation(fields: [taskId], references: [id], onDelete: SetNull)
 }
 
 model ReviewCheck {
@@ -245,6 +251,7 @@ model ValidationCheck {
   id          String      @id @default(cuid())
   versionId   String
   criteria    String
+  category    String?
   status      CheckStatus @default(PENDING)
   resultNotes String?     @db.Text
   createdAt   DateTime    @default(now())
@@ -272,4 +279,23 @@ model ToolProfile {
   config    String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum EventType {
+  WORKFLOW_CREATED
+  SPEC_GENERATED
+  SPEC_APPROVED
+  PLAN_GENERATED
+  TASKS_EXPORTED
+  REVIEW_ISSUE_RESOLVED
+  STALE_ARTIFACT_TRIGGERED
+}
+
+model EventLog {
+  id          String    @id @default(cuid())
+  eventType   EventType
+  workflowId  String?
+  userId      String?
+  metadata    String?   @db.Text // JSON string
+  createdAt   DateTime  @default(now())
 }

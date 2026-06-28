@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
       },
       include: {
         dependencies: { include: { dependsOn: true } },
+        executionPacks: true,
       },
       orderBy: { order: "asc" },
     });
