@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ToolName } from "@prisma/client";
 import ExecutionPackCard from "@/components/workflows/ExecutionPackCard";
 
-export default function ExecuteTab({ workflowId }: { workflowId: string }) {
+export default function ExecuteTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
   const router = useRouter();
   const [workflow, setWorkflow] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -99,6 +99,7 @@ export default function ExecuteTab({ workflowId }: { workflowId: string }) {
         body: JSON.stringify({ status: "REVIEWING" }),
       });
       router.refresh();
+      onMutate?.();
     } catch (e) {
       console.error(e);
     }

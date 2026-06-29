@@ -39,6 +39,19 @@ export async function GET(
   }
 }
 
+const VALID_TRANSITIONS: Record<WorkflowStatus, WorkflowStatus[]> = {
+  DRAFT: ["CLARIFYING"],
+  CLARIFYING: ["SPEC_REVIEW"],
+  SPEC_REVIEW: ["PLANNING"],
+  PLANNING: ["TASK_BREAKDOWN"],
+  TASK_BREAKDOWN: ["EXECUTING"],
+  EXECUTING: ["REVIEWING"],
+  REVIEWING: ["VALIDATING"],
+  VALIDATING: ["COMPLETED"],
+  COMPLETED: ["ARCHIVED"],
+  ARCHIVED: [],
+};
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -48,6 +61,20 @@ export async function PATCH(
 
   try {
     const { name, status } = await req.json();
+
+    if (status) {
+      const currentWorkflow = await db.workflow.findUnique({
+        where: { id: params.id, creatorId: user.id },
+      });
+      if (!currentWorkflow) return apiError("Workflow not found", 404);
+      
+      const currentStatus = currentWorkflow.status;
+      if (status !== currentStatus) {
+        if (!VALID_TRANSITIONS[currentStatus].includes(status as WorkflowStatus)) {
+          return apiError(`Invalid status transition from ${currentStatus} to ${status}`, 400);
+        }
+      }
+    }
 
     const workflow = await db.workflow.update({
       where: {

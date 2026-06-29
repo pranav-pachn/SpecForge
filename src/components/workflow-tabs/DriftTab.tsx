@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Route, AlertCircle, CheckCircle2, FileText, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function DriftTab({ workflowId }: { workflowId: string }) {
+export default function DriftTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
   const router = useRouter();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +37,7 @@ export default function DriftTab({ workflowId }: { workflowId: string }) {
         body: JSON.stringify({ resolved }),
       });
       setEvents(events.map(e => e.id === id ? { ...e, resolved } : e));
+      onMutate?.();
     } catch (e) {
       console.error(e);
     }

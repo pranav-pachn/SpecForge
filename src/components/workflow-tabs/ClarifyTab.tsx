@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Zap, CheckCircle2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function ClarifyTab({ workflowId }: { workflowId: string }) {
+export default function ClarifyTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
   const router = useRouter();
   const [workflow, setWorkflow] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
@@ -12,6 +12,7 @@ export default function ClarifyTab({ workflowId }: { workflowId: string }) {
   const [generating, setGenerating] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
+  const [regeneratingSpec, setRegeneratingSpec] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -54,6 +55,7 @@ export default function ClarifyTab({ workflowId }: { workflowId: string }) {
       });
       await fetchData();
       router.refresh();
+      onMutate?.();
     } catch (e) {
       console.error(e);
     } finally {
@@ -70,10 +72,46 @@ export default function ClarifyTab({ workflowId }: { workflowId: string }) {
         body: JSON.stringify(isDismiss ? { status: "DISMISSED" } : { answer: answers[id] }),
       });
       await fetchData();
+      onMutate?.();
     } catch (e) {
       console.error(e);
     } finally {
       setUpdating({ ...updating, [id]: false });
+    }
+  };
+
+  const handleRegenerateSpec = async () => {
+    setRegeneratingSpec(true);
+    try {
+      const spec = workflow.artifacts?.find((a: any) => a.type === "SPEC");
+      
+      const answeredClarifications = questions
+        .filter(q => q.status === "ANSWERED")
+        .map(q => ({
+          category: q.category,
+          question: q.question,
+          answer: q.answer?.answer || answers[q.id]
+        }));
+
+      await fetch("/api/ai/spec-regenerate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workflowId,
+          versionId: spec.versions[0].id,
+          specContent: spec.versions[0].content,
+          clarifications: answeredClarifications,
+        }),
+      });
+      await fetchData();
+      router.refresh();
+      onMutate?.();
+      // Optional: Navigate to spec tab automatically or show a success message
+      alert("Specification regenerated successfully. Check the Spec tab for the new version.");
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setRegeneratingSpec(false);
     }
   };
 
@@ -85,6 +123,7 @@ export default function ClarifyTab({ workflowId }: { workflowId: string }) {
         body: JSON.stringify({ status: "SPEC_REVIEW" }),
       });
       router.refresh();
+      onMutate?.();
     } catch (e) {
       console.error(e);
     }
@@ -152,13 +191,25 @@ export default function ClarifyTab({ workflowId }: { workflowId: string }) {
           </div>
         </div>
         
-        <button
-          onClick={completeClarification}
-          disabled={!isComplete}
-          className="px-6 py-2.5 rounded-md font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
-        >
-          Continue to Review <CheckCircle2 className="w-4 h-4" />
-        </button>
+        <div className="flex gap-2">
+          {isComplete && questions.some(q => q.status === "ANSWERED") && (
+            <button
+              onClick={handleRegenerateSpec}
+              disabled={regeneratingSpec}
+              className="px-6 py-2.5 rounded-md font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
+            >
+              {regeneratingSpec ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+              {regeneratingSpec ? "Regenerating..." : "Regenerate Spec with Answers"}
+            </button>
+          )}
+          <button
+            onClick={completeClarification}
+            disabled={!isComplete}
+            className="px-6 py-2.5 rounded-md font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
+          >
+            Continue to Review <CheckCircle2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <div className="space-y-8">

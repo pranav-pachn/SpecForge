@@ -7,11 +7,13 @@ import { useRouter } from "next/navigation";
 export default function PlanTab({ 
   workflowId, 
   specArtifact,
-  planArtifact 
+  planArtifact,
+  onMutate 
 }: { 
   workflowId: string, 
   specArtifact?: any,
-  planArtifact?: any 
+  planArtifact?: any,
+  onMutate?: () => void
 }) {
   const router = useRouter();
   const version = planArtifact?.versions?.[0];
@@ -24,18 +26,25 @@ export default function PlanTab({
   const handleGenerate = async () => {
     setIsLoading(true);
     try {
-      // In a real app we'd fetch clarifications here, but for MVP we assume they are fetched or 
-      // we can rely on the spec being complete. Let's just pass the spec.
+      // Fetch clarifications for context
+      const clarRes = await fetch(`/api/clarifications?versionId=${specVersion?.id}`);
+      const clarifications = await clarRes.json();
+      const answeredClarifications = clarifications
+        .filter((c: any) => c.status === "ANSWERED")
+        .map((c: any) => ({ question: c.question, answer: c.answer?.answer }));
+
       await fetch(`/api/ai/plan`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           workflowId,
-          specContent: specVersion?.content
+          specContent: specVersion?.content,
+          clarifications: answeredClarifications
         }),
       });
       router.refresh();
       setIsEditing(false);
+      onMutate?.();
     } catch (error) {
       console.error("Failed to generate plan:", error);
     } finally {
@@ -54,6 +63,7 @@ export default function PlanTab({
       });
       setIsEditing(false);
       router.refresh();
+      onMutate?.();
     } catch (error) {
       console.error("Failed to save draft:", error);
     } finally {
@@ -76,6 +86,7 @@ export default function PlanTab({
         body: JSON.stringify({ status: "TASK_BREAKDOWN" }),
       });
       router.refresh();
+      onMutate?.();
     } catch (error) {
       console.error("Failed to approve plan:", error);
     } finally {
@@ -103,6 +114,11 @@ export default function PlanTab({
       status={version.status}
       versionNumber={version.version}
       content={content || version.content}
+      artifactId={planArtifact.id}
+      onVersionSelect={(v) => {
+        setContent(v.content);
+        setIsEditing(false);
+      }}
       isEditing={isEditing}
       sourceLabel={specVersion ? `Based on Spec v${specVersion.version}` : undefined}
       onContentChange={setContent}

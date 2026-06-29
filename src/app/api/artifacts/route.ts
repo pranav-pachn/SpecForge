@@ -59,7 +59,17 @@ export async function POST(req: NextRequest) {
         workflowId,
         type: type as ArtifactType,
         title,
+        versions: {
+          create: {
+            version: 1,
+            content: "",
+            status: "DRAFT",
+          },
+        },
       },
+      include: {
+        versions: true,
+      }
     });
 
     return jsonResponse(artifact, 201);

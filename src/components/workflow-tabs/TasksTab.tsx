@@ -5,7 +5,7 @@ import { Loader2, ListTodo, Plus, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TaskCard from "@/components/workflows/TaskCard";
 
-export default function TasksTab({ workflowId }: { workflowId: string }) {
+export default function TasksTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
   const router = useRouter();
   const [workflow, setWorkflow] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -51,6 +51,7 @@ export default function TasksTab({ workflowId }: { workflowId: string }) {
         }),
       });
       await fetchData();
+      onMutate?.();
     } catch (e) {
       console.error(e);
     } finally {
@@ -131,6 +132,7 @@ export default function TasksTab({ workflowId }: { workflowId: string }) {
         }),
       });
       await fetchData();
+      onMutate?.();
     } catch (e) {
       console.error("Failed to add manual task:", e);
     } finally {
@@ -182,6 +184,7 @@ export default function TasksTab({ workflowId }: { workflowId: string }) {
         body: JSON.stringify({ status: "EXECUTING" }),
       });
       router.refresh();
+      onMutate?.();
     } catch (e) {
       console.error(e);
     }

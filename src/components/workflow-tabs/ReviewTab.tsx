@@ -11,7 +11,7 @@ const CHECK_LABELS: Record<string, string> = {
   CONSISTENCY: "Consistency & Metrics",
 };
 
-export default function ReviewTab({ workflowId }: { workflowId: string }) {
+export default function ReviewTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
   const router = useRouter();
   const [workflow, setWorkflow] = useState<any>(null);
   const [checks, setChecks] = useState<any[]>([]);
@@ -59,6 +59,7 @@ export default function ReviewTab({ workflowId }: { workflowId: string }) {
       });
       await fetchData();
       router.refresh();
+      onMutate?.();
     } catch (e) {
       console.error(e);
     } finally {
@@ -76,13 +77,14 @@ export default function ReviewTab({ workflowId }: { workflowId: string }) {
       });
       
       // Also generate a Plan artifact placeholder
-      await fetch(`/api/workflows/${workflowId}/artifacts`, {
+      await fetch(`/api/artifacts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "PLAN", title: "Implementation Plan" }),
+        body: JSON.stringify({ workflowId, type: "PLAN", title: "Implementation Plan" }),
       });
       
       router.refresh();
+      onMutate?.();
     } catch (e) {
       console.error(e);
     } finally {
@@ -120,6 +122,7 @@ export default function ReviewTab({ workflowId }: { workflowId: string }) {
       });
       await fetchData();
       router.refresh();
+      onMutate?.();
     } catch (e) {
       console.error(e);
     } finally {
@@ -136,6 +139,7 @@ export default function ReviewTab({ workflowId }: { workflowId: string }) {
         body: JSON.stringify({ status: "VALIDATING" }),
       });
       router.refresh();
+      onMutate?.();
     } catch (e) {
       console.error(e);
     } finally {

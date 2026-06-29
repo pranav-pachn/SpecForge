@@ -17,23 +17,38 @@ You MUST adhere to the following template:
 - **[Component A]:** [What it does]
 - **[Component B]:** [What it does]
 
-# 3. Data Model
+# 3. Module Breakdown
+*Break down the implementation into logical modules or feature areas.*
+- **[Module A]:** [Scope, dependencies, complexity estimate]
+- **[Module B]:** [Scope, dependencies, complexity estimate]
+
+# 4. Data Model
 *Describe any new database models, schema changes, or data structures needed.*
 - **[Model A]:** [Fields, relationships, purpose]
 - **[Model B]:** [Fields, relationships, purpose]
 
-# 4. API Contracts / Interfaces
+# 5. API Contracts / Interfaces
 *Describe the APIs, internal interfaces, or message contracts to be built or modified.*
 - **[API 1]:** [Endpoint, Method, Request/Response summary]
 - **[API 2]:** [Endpoint, Method, Request/Response summary]
 
-# 5. Implementation Sequence
+# 6. Folder Structure
+*Propose a clean, idiomatic project folder structure.*
+\`\`\`
+src/
+├── app/
+├── components/
+├── lib/
+└── ...
+\`\`\`
+
+# 7. Implementation Sequence
 *Describe the recommended high-level order of implementation.*
 1. **Phase 1:** [E.g., DB and API foundations]
 2. **Phase 2:** [E.g., Core logic and integrations]
 3. **Phase 3:** [E.g., UI and Polish]
 
-# 6. Technical Risks & Mitigations
+# 8. Technical Risks & Mitigations
 *Identify specific technical risks and how they will be handled.*
 - **Risk 1:** [Description] -> **Mitigation:** [How to handle]
 - **Risk 2:** [Description] -> **Mitigation:** [How to handle]

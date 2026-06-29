@@ -1,8 +1,10 @@
 import ReactMarkdown from "react-markdown";
 import { VERSION_STATUS_COLORS } from "@/lib/constants";
 import { ArtifactVersionStatus } from "@prisma/client";
-import { Loader2, RefreshCw, CheckCircle2, Save, FileText, Sparkles, LayoutTemplate, Keyboard } from "lucide-react";
+import { Loader2, RefreshCw, CheckCircle2, Save, FileText, Sparkles, LayoutTemplate, History } from "lucide-react";
 import { useEffect, useState } from "react";
+import MonacoMarkdownEditor from "@/components/editors/MonacoMarkdownEditor";
+import { formatDistanceToNow } from "date-fns";
 
 interface ArtifactPanelProps {
   title: string;
@@ -19,6 +21,8 @@ interface ArtifactPanelProps {
   emptyStateMessage?: string;
   completenessLabel?: string;
   sourceLabel?: string;
+  artifactId?: string;
+  onVersionSelect?: (version: any) => void;
 }
 
 // Simple diff helper for MVP
@@ -56,6 +60,28 @@ export default function ArtifactPanel({
 }: ArtifactPanelProps) {
   const isDraftOrReview = status === "DRAFT" || status === "NEEDS_REVIEW";
   const [showDiff, setShowDiff] = useState(false);
+  const [versions, setVersions] = useState<any[]>([]);
+  const [loadingVersions, setLoadingVersions] = useState(false);
+
+  useEffect(() => {
+    if (artifactId) {
+      const fetchVersions = async () => {
+        setLoadingVersions(true);
+        try {
+          const res = await fetch(`/api/artifacts/${artifactId}/versions`);
+          if (res.ok) {
+            const data = await res.json();
+            setVersions(data);
+          }
+        } catch (e) {
+          console.error("Failed to fetch versions", e);
+        } finally {
+          setLoadingVersions(false);
+        }
+      };
+      fetchVersions();
+    }
+  }, [artifactId, status]); // Refetch if status changes (meaning a new version was likely created or approved)
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -191,14 +217,23 @@ export default function ArtifactPanel({
               {renderDiff(content)}
             </div>
           ) : isEditing ? (
-            <textarea
-              value={content}
-              onChange={(e) => onContentChange && onContentChange(e.target.value)}
-              className="w-full h-full p-8 resize-none outline-none font-mono text-sm leading-relaxed bg-slate-50 dark:bg-slate-900/50 dark:text-slate-300"
-              placeholder="Start typing markdown..."
-            />
+            <div className="flex h-full w-full">
+              <div className="w-1/2 h-full">
+                <MonacoMarkdownEditor
+                  value={content}
+                  onChange={(val) => onContentChange && onContentChange(val || "")}
+                  onSave={onSaveDraft}
+                  readOnly={false}
+                />
+              </div>
+              <div className="w-1/2 h-full overflow-y-auto bg-white dark:bg-slate-950 p-8">
+                <article className="prose prose-sm lg:prose-base max-w-none text-slate-800 dark:text-slate-200 dark:prose-invert prose-headings:font-bold prose-headings:tracking-tight prose-a:text-blue-600 prose-img:rounded-xl">
+                  <ReactMarkdown>{content}</ReactMarkdown>
+                </article>
+              </div>
+            </div>
           ) : (
-            <div className="p-8 animate-in">
+            <div className="p-8 animate-in h-full overflow-y-auto">
               <article className="prose prose-lg prose-slate max-w-[800px] mx-auto dark:prose-invert prose-headings:font-bold prose-headings:tracking-tight prose-a:text-blue-600 prose-img:rounded-xl">
                 <ReactMarkdown>{content}</ReactMarkdown>
               </article>
@@ -206,35 +241,60 @@ export default function ArtifactPanel({
           )}
         </div>
 
-        {/* Version History Stub sidebar */}
+        {/* Version History sidebar */}
         <div className="w-72 border-l border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-5 shrink-0 overflow-y-auto">
-          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Version History</h3>
+          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <History className="w-3.5 h-3.5" /> Version History
+          </h3>
           <div className="space-y-3">
-            <div className="flex flex-col gap-2 p-3.5 rounded-lg bg-white dark:bg-slate-800 border shadow-sm border-blue-200 dark:border-blue-800">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-sm">v{versionNumber}</span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">CURRENT</span>
-              </div>
-              <span className="text-xs text-slate-500">Latest changes</span>
-              {versionNumber > 1 && !isEditing && (
-                <button 
-                  onClick={() => setShowDiff(!showDiff)}
-                  className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                >
-                  {showDiff ? "Hide Changes" : "Show Changes"}
-                </button>
-              )}
-            </div>
-            
-            {/* Stub for older versions */}
-            {versionNumber > 1 && (
-              <div className="flex flex-col gap-1 p-3.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 border border-transparent cursor-pointer transition-colors opacity-70">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm text-slate-600 dark:text-slate-400">v{versionNumber - 1}</span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400">SUPERSEDED</span>
-                </div>
-                <span className="text-xs text-slate-500">Previous draft</span>
-              </div>
+            {loadingVersions ? (
+              <div className="flex justify-center p-4"><Loader2 className="w-4 h-4 animate-spin text-slate-400" /></div>
+            ) : versions.length > 0 ? (
+              versions.map((v) => {
+                const isCurrent = v.version === versions[0].version; // assuming first is latest
+                const isViewing = v.version === versionNumber;
+                return (
+                  <div 
+                    key={v.id}
+                    onClick={() => {
+                      if (!isViewing && onVersionSelect) {
+                        onVersionSelect(v);
+                      }
+                    }}
+                    className={`flex flex-col gap-2 p-3.5 rounded-lg border shadow-sm transition-colors ${
+                      isViewing 
+                        ? 'bg-white dark:bg-slate-800 border-blue-200 dark:border-blue-800 cursor-default' 
+                        : 'bg-white/60 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300 cursor-pointer opacity-80 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-sm">v{v.version}</span>
+                      {isCurrent ? (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">CURRENT</span>
+                      ) : (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400">{v.status}</span>
+                      )}
+                    </div>
+                    <span className="text-xs text-slate-500">
+                      {formatDistanceToNow(new Date(v.createdAt), { addSuffix: true })}
+                    </span>
+                    
+                    {isViewing && !isEditing && v.version > 1 && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDiff(!showDiff);
+                        }}
+                        className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                      >
+                        {showDiff ? "Hide Changes" : "Show Changes"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-xs text-slate-500 italic">No versions saved yet</div>
             )}
           </div>
           

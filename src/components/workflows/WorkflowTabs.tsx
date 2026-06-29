@@ -9,6 +9,7 @@ export type TabId = 'spec' | 'clarify' | 'plan' | 'tasks' | 'execute' | 'review'
 interface WorkflowTabsProps {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
+  workflow?: any;
 }
 
 const TABS = [
@@ -22,7 +23,7 @@ const TABS = [
   { id: 'drift', label: 'Drift', icon: Activity, number: 8 },
 ] as const;
 
-export default function WorkflowTabs({ activeTab, onTabChange }: WorkflowTabsProps) {
+export default function WorkflowTabs({ activeTab, onTabChange, workflow }: WorkflowTabsProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Keyboard navigation for tabs
@@ -57,6 +58,30 @@ export default function WorkflowTabs({ activeTab, onTabChange }: WorkflowTabsPro
     }
   }, [activeTab]);
 
+  const getTabStatusIndicator = (tabId: TabId) => {
+    if (!workflow || !workflow.artifacts) return null;
+    
+    const getVersionStatus = (type: string) => {
+      const artifact = workflow.artifacts.find((a: any) => a.type === type);
+      return artifact?.versions?.[0]?.status;
+    };
+
+    let status = null;
+    if (tabId === 'spec') status = getVersionStatus('SPEC');
+    if (tabId === 'plan') status = getVersionStatus('PLAN');
+    // For MVP, we'll just show status for spec and plan where artifacts definitely exist
+    
+    if (!status) return null;
+
+    const colorClass = 
+      status === 'APPROVED' ? 'bg-green-500' :
+      status === 'STALE' ? 'bg-red-500' :
+      status === 'NEEDS_REVIEW' ? 'bg-yellow-500' :
+      'bg-slate-400 dark:bg-slate-500';
+      
+    return <div className={`w-2 h-2 rounded-full ${colorClass} shrink-0 ml-2`} title={`Status: ${status}`} />;
+  };
+
   return (
     <div 
       ref={scrollContainerRef}
@@ -84,6 +109,7 @@ export default function WorkflowTabs({ activeTab, onTabChange }: WorkflowTabsPro
             
             <Icon className={cn("w-4 h-4 transition-colors", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-500")} />
             <span>{tab.label}</span>
+            {getTabStatusIndicator(tab.id as TabId)}
             <span className={cn(
               "ml-1 text-[10px] px-1.5 rounded-md font-mono transition-colors",
               isActive ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 opacity-0 group-hover:opacity-100"

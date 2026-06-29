@@ -4,7 +4,7 @@ import { useState } from "react";
 import ArtifactPanel from "@/components/artifacts/ArtifactPanel";
 import { useRouter } from "next/navigation";
 
-export default function SpecTab({ artifact, workflowId }: { artifact?: any, workflowId: string }) {
+export default function SpecTab({ artifact, workflowId, onMutate }: { artifact?: any, workflowId: string, onMutate?: () => void }) {
   const router = useRouter();
   const version = artifact?.versions?.[0];
   
@@ -35,6 +35,7 @@ export default function SpecTab({ artifact, workflowId }: { artifact?: any, work
       });
       setIsEditing(false);
       router.refresh();
+      onMutate?.();
     } catch (error) {
       console.error("Failed to save draft:", error);
     } finally {
@@ -57,6 +58,7 @@ export default function SpecTab({ artifact, workflowId }: { artifact?: any, work
         body: JSON.stringify({ status: "CLARIFYING" }),
       });
       router.refresh();
+      onMutate?.();
     } catch (error) {
       console.error("Failed to approve spec:", error);
     } finally {
@@ -82,6 +84,11 @@ export default function SpecTab({ artifact, workflowId }: { artifact?: any, work
       status={version.status}
       versionNumber={version.version}
       content={content}
+      artifactId={artifact.id}
+      onVersionSelect={(v) => {
+        setContent(v.content);
+        setIsEditing(false);
+      }}
       isEditing={isEditing}
       onContentChange={setContent}
       onToggleEdit={() => setIsEditing(!isEditing)}

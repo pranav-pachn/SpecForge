@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, ClipboardCheck, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function ValidateTab({ workflowId }: { workflowId: string }) {
+export default function ValidateTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
   const router = useRouter();
   const [workflow, setWorkflow] = useState<any>(null);
   const [checks, setChecks] = useState<any[]>([]);
@@ -48,6 +48,7 @@ export default function ValidateTab({ workflowId }: { workflowId: string }) {
       });
       await fetchData();
       router.refresh();
+      onMutate?.();
     } catch (e) {
       console.error(e);
     } finally {
@@ -64,6 +65,7 @@ export default function ValidateTab({ workflowId }: { workflowId: string }) {
         body: JSON.stringify({ status: "COMPLETED" }),
       });
       router.refresh();
+      onMutate?.();
     } catch (e) {
       console.error(e);
     } finally {
