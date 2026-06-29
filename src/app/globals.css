@@ -4,30 +4,53 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%; /* slate-50 */
-    --foreground: 222.2 84% 4.9%; /* slate-950 */
-    --radius: 0.5rem;
-  }
- 
-  .dark {
-    --background: 222.2 84% 4.9%; /* slate-950 */
-    --foreground: 210 40% 98%; /* slate-50 */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --radius: 0.75rem;
   }
 }
 
 @layer base {
   body {
-    @apply bg-background text-foreground antialiased selection:bg-blue-200 selection:text-blue-900 dark:selection:bg-blue-900 dark:selection:text-blue-100;
+    @apply bg-background text-foreground antialiased;
   }
 }
 
 @layer utilities {
+  .glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+  }
+  
+  .glass-panel {
+    @apply bg-[#0f111a]/80 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)];
+  }
+
+  .glow-border {
+    @apply relative before:absolute before:inset-0 before:-z-10 before:rounded-[inherit] before:p-[1px] before:bg-gradient-to-br before:from-blue-500/50 before:to-purple-500/50;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+  }
+
   .animate-in {
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeIn 0.2s ease-out forwards;
   }
   .animate-up {
-    animation: slideUp 0.4s ease-out;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
+}
+
+/* Custom scrollbar for webkit */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
 }
 
 @keyframes fadeIn {
@@ -36,6 +59,17 @@
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Base prose overrides for dark mode */
+.prose {
+  --tw-prose-body: #94a3b8;
+  --tw-prose-headings: #f8fafc;
+  --tw-prose-links: #60a5fa;
+  --tw-prose-bold: #f1f5f9;
+  --tw-prose-code: #e2e8f0;
+  --tw-prose-pre-bg: #0f111a;
+  --tw-prose-pre-code: #e2e8f0;
 }

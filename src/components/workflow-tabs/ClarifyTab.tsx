@@ -138,27 +138,29 @@ export default function ClarifyTab({ workflowId, onMutate }: { workflowId: strin
 
   if (!specVersion || specVersion.status === "DRAFT" || specVersion.status === "STALE") {
     return (
-      <div className="bg-white dark:bg-slate-950 border rounded-xl p-12 text-center shadow-sm">
-        <h3 className="text-xl font-bold mb-2">Spec Not Ready</h3>
-        <p className="text-slate-500 mb-6">You must approve the specification before running ambiguity checks.</p>
+      <div className="glass-panel rounded-3xl p-16 text-center">
+        <h3 className="text-2xl font-bold mb-3 text-white">Spec Not Ready</h3>
+        <p className="text-slate-400 mb-6 text-lg">You must approve the specification before running ambiguity checks.</p>
       </div>
     );
   }
 
   if (questions.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-950 border rounded-xl p-12 text-center shadow-sm">
-        <Zap className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-        <h3 className="text-xl font-bold mb-2">Clarification Analysis</h3>
-        <p className="text-slate-500 mb-6 max-w-lg mx-auto">
+      <div className="glass-panel rounded-3xl p-16 text-center">
+        <div className="w-24 h-24 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 text-yellow-400 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[inset_0_0_30px_rgba(234,179,8,0.2)]">
+          <Zap className="w-12 h-12" />
+        </div>
+        <h3 className="text-3xl font-bold mb-4 text-white tracking-tight">Clarification Analysis</h3>
+        <p className="text-slate-400 mb-10 max-w-lg mx-auto text-lg leading-relaxed">
           Our AI will analyze your approved specification to find ambiguities, edge cases, and missing technical details before we generate a plan.
         </p>
         <button
           onClick={handleGenerate}
           disabled={generating}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-md font-medium inline-flex items-center gap-2"
+          className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black px-8 py-3.5 rounded-xl font-bold inline-flex items-center gap-2 shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_30px_rgba(234,179,8,0.5)] transition-all duration-300 hover:-translate-y-0.5"
         >
-          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+          {generating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
           Run Ambiguity Checks
         </button>
       </div>
@@ -177,37 +179,37 @@ export default function ClarifyTab({ workflowId, onMutate }: { workflowId: strin
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-slate-950 border rounded-xl p-6 shadow-sm flex items-center justify-between sticky top-4 z-10">
+      <div className="glass rounded-2xl p-6 flex items-center justify-between sticky top-4 z-10 border-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
         <div>
-          <h2 className="text-xl font-bold mb-1">Clarifications</h2>
-          <div className="flex items-center gap-3">
-            <div className="w-48 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+          <h2 className="text-2xl font-extrabold mb-2 text-white">Clarifications</h2>
+          <div className="flex items-center gap-4">
+            <div className="w-64 h-2.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
               <div 
-                className="h-full bg-blue-600 transition-all"
+                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]"
                 style={{ width: `${(resolvedCount / questions.length) * 100}%` }}
               />
             </div>
-            <span className="text-sm font-medium text-slate-500">{resolvedCount} of {questions.length} resolved</span>
+            <span className="text-sm font-bold text-slate-400">{resolvedCount} of {questions.length} resolved</span>
           </div>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           {isComplete && questions.some(q => q.status === "ANSWERED") && (
             <button
               onClick={handleRegenerateSpec}
               disabled={regeneratingSpec}
-              className="px-6 py-2.5 rounded-md font-medium text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
+              className="px-6 py-3 rounded-xl font-bold text-blue-300 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-[0_0_15px_rgba(59,130,246,0.2)] transition-all hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]"
             >
-              {regeneratingSpec ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+              {regeneratingSpec ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
               {regeneratingSpec ? "Regenerating..." : "Regenerate Spec with Answers"}
             </button>
           )}
           <button
             onClick={completeClarification}
             disabled={!isComplete}
-            className="px-6 py-2.5 rounded-md font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
+            className="px-6 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all hover:shadow-[0_0_25px_rgba(16,185,129,0.5)]"
           >
-            Continue to Review <CheckCircle2 className="w-4 h-4" />
+            Continue to Review <CheckCircle2 className="w-5 h-5" />
           </button>
         </div>
       </div>

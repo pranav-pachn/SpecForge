@@ -57,6 +57,8 @@ export default function ArtifactPanel({
   emptyStateMessage = "No content available yet.",
   completenessLabel,
   sourceLabel,
+  artifactId,
+  onVersionSelect,
 }: ArtifactPanelProps) {
   const isDraftOrReview = status === "DRAFT" || status === "NEEDS_REVIEW";
   const [showDiff, setShowDiff] = useState(false);
@@ -114,8 +116,8 @@ export default function ArtifactPanel({
   }, [isEditing, onSaveDraft, isDraftOrReview, onApprove, onToggleEdit]);
   
   return (
-    <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm flex flex-col h-full min-h-[600px] overflow-hidden relative">
-      <div className="sticky top-0 z-10 border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex flex-wrap items-center justify-between gap-4 shrink-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md">
+    <div className="glass-panel rounded-2xl flex flex-col h-full min-h-[600px] overflow-hidden relative">
+      <div className="sticky top-0 z-10 border-b border-white/10 px-6 py-4 flex flex-wrap items-center justify-between gap-4 shrink-0 glass rounded-t-2xl">
         <div className="flex items-center gap-4">
           <div>
             <h2 className="text-xl font-bold flex items-center gap-2">
@@ -179,7 +181,7 @@ export default function ArtifactPanel({
               onClick={onApprove}
               title="Cmd/Ctrl + Enter"
               disabled={isLoading}
-              className="px-4 py-1.5 flex items-center gap-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md shadow-sm transition-colors"
+              className="px-5 py-2 flex items-center gap-2 text-sm font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all duration-300 hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] hover:-translate-y-0.5"
             >
               <CheckCircle2 className="w-4 h-4" /> Approve
             </button>
@@ -189,20 +191,20 @@ export default function ArtifactPanel({
 
       <div className="flex-1 flex overflow-hidden">
         {/* Main Content Area */}
-        <div className="flex-1 p-0 overflow-y-auto bg-white dark:bg-slate-950 relative">
+        <div className="flex-1 p-0 overflow-y-auto bg-transparent relative">
           {!content && !isEditing ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 p-8 animate-in">
-              <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-6">
-                <Sparkles className="w-10 h-10 text-blue-500 animate-pulse" />
+              <div className="w-24 h-24 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full flex items-center justify-center mb-8 border border-white/5 shadow-[inset_0_0_30px_rgba(139,92,246,0.1)]">
+                <Sparkles className="w-12 h-12 text-blue-400 animate-pulse drop-shadow-[0_0_15px_rgba(96,165,250,0.5)]" />
               </div>
-              <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200 mb-2">Ready to Forge</h3>
-              <p className="text-md text-slate-500 mb-8 max-w-sm text-center">{emptyStateMessage}</p>
+              <h3 className="text-2xl font-extrabold text-white mb-3 tracking-tight">Ready to Forge</h3>
+              <p className="text-md text-slate-400 mb-8 max-w-sm text-center leading-relaxed">{emptyStateMessage}</p>
               {onRegenerate && (
                 <button
                   onClick={onRegenerate}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 shadow-sm hover:shadow transition-all"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold flex items-center gap-2 shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] transition-all duration-300 hover:-translate-y-0.5"
                 >
-                  <RefreshCw className="w-4 h-4" /> Generate AI Draft
+                  <RefreshCw className="w-5 h-5" /> Generate AI Draft
                 </button>
               )}
             </div>
@@ -218,7 +220,7 @@ export default function ArtifactPanel({
             </div>
           ) : isEditing ? (
             <div className="flex h-full w-full">
-              <div className="w-1/2 h-full">
+              <div className="w-1/2 h-full border-r border-white/5 bg-[#0f111a]/50">
                 <MonacoMarkdownEditor
                   value={content}
                   onChange={(val) => onContentChange && onContentChange(val || "")}
@@ -226,8 +228,8 @@ export default function ArtifactPanel({
                   readOnly={false}
                 />
               </div>
-              <div className="w-1/2 h-full overflow-y-auto bg-white dark:bg-slate-950 p-8">
-                <article className="prose prose-sm lg:prose-base max-w-none text-slate-800 dark:text-slate-200 dark:prose-invert prose-headings:font-bold prose-headings:tracking-tight prose-a:text-blue-600 prose-img:rounded-xl">
+              <div className="w-1/2 h-full overflow-y-auto bg-transparent p-8">
+                <article className="prose prose-sm lg:prose-base max-w-none text-slate-300 prose-headings:text-white prose-headings:font-bold prose-headings:tracking-tight prose-a:text-blue-400 prose-img:rounded-xl">
                   <ReactMarkdown>{content}</ReactMarkdown>
                 </article>
               </div>
@@ -242,8 +244,8 @@ export default function ArtifactPanel({
         </div>
 
         {/* Version History sidebar */}
-        <div className="w-72 border-l border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-5 shrink-0 overflow-y-auto">
-          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+        <div className="w-72 border-l border-white/5 bg-black/20 p-5 shrink-0 overflow-y-auto">
+          <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
             <History className="w-3.5 h-3.5" /> Version History
           </h3>
           <div className="space-y-3">
@@ -261,10 +263,10 @@ export default function ArtifactPanel({
                         onVersionSelect(v);
                       }
                     }}
-                    className={`flex flex-col gap-2 p-3.5 rounded-lg border shadow-sm transition-colors ${
+                    className={`flex flex-col gap-2 p-3.5 rounded-xl border transition-all duration-300 ${
                       isViewing 
-                        ? 'bg-white dark:bg-slate-800 border-blue-200 dark:border-blue-800 cursor-default' 
-                        : 'bg-white/60 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300 cursor-pointer opacity-80 hover:opacity-100'
+                        ? 'bg-blue-500/10 border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)] cursor-default glow-border' 
+                        : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10 cursor-pointer'
                     }`}
                   >
                     <div className="flex items-center justify-between">

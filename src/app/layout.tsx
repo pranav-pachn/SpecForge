@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const outfit = Outfit({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "SpecForge | Spec-to-Execution OS",
@@ -22,8 +22,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.className}>
-      <body className="min-h-screen bg-background text-foreground antialiased selection:bg-blue-200 selection:text-blue-900 dark:selection:bg-blue-900 dark:selection:text-blue-100">
+    <html lang="en" className={`dark ${outfit.className}`}>
+      <body className="min-h-screen bg-[#05050a] text-slate-200 antialiased selection:bg-blue-500/30 selection:text-blue-200">
+        <div className="fixed inset-0 z-[-1] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#05050a] to-[#05050a]" />
         {children}
       </body>
     </html>
