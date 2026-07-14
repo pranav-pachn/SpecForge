@@ -1,8 +1,7 @@
 import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/lib/api-helpers";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
-import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { aiConfig, generateTextWithGemini, MODEL_IDS } from "@/lib/ai/config";
 import { ReviewCheckType, CheckStatus } from "@prisma/client";
 
 const REVIEW_GATE_PROMPT = `
@@ -42,8 +41,7 @@ export async function POST(req: NextRequest) {
       return apiError("versionId and specContent are required", 400);
     }
 
-    const { text } = await generateText({
-      model: openai("gpt-4o"),
+    const { text } = await generateTextWithGemini(MODEL_IDS.FLASH, {
       system: REVIEW_GATE_PROMPT,
       prompt: `Analyze this specification:\n\n${specContent}`,
     });

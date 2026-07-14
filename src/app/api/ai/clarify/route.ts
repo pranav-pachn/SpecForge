@@ -1,8 +1,7 @@
 import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/lib/api-helpers";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
-import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { aiConfig, generateTextWithGemini, MODEL_IDS } from "@/lib/ai/config";
 import { CLARIFICATION_SYSTEM_PROMPT } from "@/lib/ai/clarification-prompts";
 import { WorkflowStatus } from "@prisma/client";
 
@@ -18,8 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Call LLM for clarification questions
-    const { text } = await generateText({
-      model: openai("gpt-4o"),
+    const { text } = await generateTextWithGemini(MODEL_IDS.FLASH, {
       system: CLARIFICATION_SYSTEM_PROMPT,
       prompt: `Analyze this specification and generate clarification questions:\n\n${specContent}`,
     });

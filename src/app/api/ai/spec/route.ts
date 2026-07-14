@@ -1,7 +1,6 @@
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/lib/api-helpers";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { db } from "@/lib/db";
-import { generateText } from "ai";
-import { aiConfig } from "@/lib/ai/config";
+import { aiConfig, generateTextWithGemini, MODEL_IDS } from "@/lib/ai/config";
 import { SPEC_GENERATION_SYSTEM_PROMPT } from "@/lib/ai/prompts";
 import { ArtifactVersionStatus, WorkflowStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
@@ -56,8 +55,7 @@ Please generate the product-ready feature specification using the required 12-se
 `;
 
     // Call the LLM
-    const { text } = await generateText({
-      model: aiConfig.model,
+    const { text } = await generateTextWithGemini(MODEL_IDS.PRO, {
       temperature: aiConfig.temperature,
       system: SPEC_GENERATION_SYSTEM_PROMPT,
       prompt: userPrompt,

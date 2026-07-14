@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/lib/api-helpers";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
 
 export async function GET(
@@ -80,7 +80,7 @@ export async function POST(
     // Run drift engine after transaction
     if (latestVersion) {
       // Import dynamically to avoid circular dependencies or just normal import
-      const { handleArtifactDrift } = await import("@/lib/drift-engine");
+      const { handleArtifactDrift } = await import("@/server/services/drift-engine");
       await handleArtifactDrift(artifact.workflowId, artifact.type, latestVersion.id, newVersion.id);
     }
 

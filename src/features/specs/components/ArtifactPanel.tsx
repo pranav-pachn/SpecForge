@@ -3,7 +3,7 @@ import { VERSION_STATUS_COLORS } from "@/lib/constants";
 import { ArtifactVersionStatus } from "@prisma/client";
 import { Loader2, RefreshCw, CheckCircle2, Save, FileText, Sparkles, LayoutTemplate, History } from "lucide-react";
 import { useEffect, useState } from "react";
-import MonacoMarkdownEditor from "@/components/editors/MonacoMarkdownEditor";
+import MonacoMarkdownEditor from "@/features/specs/components/editors/MonacoMarkdownEditor";
 import { formatDistanceToNow } from "date-fns";
 
 interface ArtifactPanelProps {
@@ -53,7 +53,8 @@ export default function ArtifactPanel({
   onApprove,
   onRegenerate,
   onToggleEdit,
-  isLoading = false,
+  isLoading 
+  = false,
   emptyStateMessage = "No content available yet.",
   completenessLabel,
   sourceLabel,

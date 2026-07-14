@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Plus, ArrowRight, Hammer, CheckCircle2, AlertTriangle, Layers } from "lucide-react";
-import CreateWorkflowModal from "@/components/workflows/CreateWorkflowModal";
+import CreateWorkflowModal from "@/features/workflows/components/workflows/CreateWorkflowModal";
 import { WorkflowStatus } from "@prisma/client";
 import { WORKFLOW_STATUS_LABELS, WORKFLOW_STATUS_COLORS } from "@/lib/constants";
 import Link from "next/link";

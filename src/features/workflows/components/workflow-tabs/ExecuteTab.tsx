@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Terminal, ArrowRight, ServerCrash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ToolName } from "@prisma/client";
-import ExecutionPackCard from "@/components/workflows/ExecutionPackCard";
+import ExecutionPackCard from "@/features/workflows/components/workflows/ExecutionPackCard";
 
 export default function ExecuteTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
   const router = useRouter();

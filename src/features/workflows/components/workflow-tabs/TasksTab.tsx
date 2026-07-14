@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Loader2, ListTodo, Plus, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import TaskCard from "@/components/workflows/TaskCard";
+import TaskCard from "@/features/workflows/components/workflows/TaskCard";
 
 export default function TasksTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
   const router = useRouter();

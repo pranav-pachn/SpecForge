@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import ArtifactPanel from "@/components/artifacts/ArtifactPanel";
+import ArtifactPanel from "@/features/specs/components/ArtifactPanel";
 import { useRouter } from "next/navigation";
 
 export default function PlanTab({ 

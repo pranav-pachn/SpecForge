@@ -3,21 +3,21 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { WorkflowStatus } from "@prisma/client";
-import PipelineStages from "@/components/workflows/PipelineStages";
-import WorkflowTabs, { TabId } from "@/components/workflows/WorkflowTabs";
+import PipelineStages from "@/features/workflows/components/workflows/PipelineStages";
+import WorkflowTabs, { TabId } from "@/features/workflows/components/workflows/WorkflowTabs";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 
 // Tab Components
-import SpecTab from "@/components/workflow-tabs/SpecTab";
-import ClarifyTab from "@/components/workflow-tabs/ClarifyTab";
-import PlanTab from "@/components/workflow-tabs/PlanTab";
-import TasksTab from "@/components/workflow-tabs/TasksTab";
-import ExecuteTab from "@/components/workflow-tabs/ExecuteTab";
-import ReviewTab from "@/components/workflow-tabs/ReviewTab";
-import ValidateTab from "@/components/workflow-tabs/ValidateTab";
-import DriftTab from "@/components/workflow-tabs/DriftTab";
+import SpecTab from "@/features/workflows/components/workflow-tabs/SpecTab";
+import ClarifyTab from "@/features/workflows/components/workflow-tabs/ClarifyTab";
+import PlanTab from "@/features/workflows/components/workflow-tabs/PlanTab";
+import TasksTab from "@/features/workflows/components/workflow-tabs/TasksTab";
+import ExecuteTab from "@/features/workflows/components/workflow-tabs/ExecuteTab";
+import ReviewTab from "@/features/workflows/components/workflow-tabs/ReviewTab";
+import ValidateTab from "@/features/workflows/components/workflow-tabs/ValidateTab";
+import DriftTab from "@/features/workflows/components/workflow-tabs/DriftTab";
 
 const STATUS_TO_TAB: Record<WorkflowStatus, TabId> = {
   DRAFT: "spec",

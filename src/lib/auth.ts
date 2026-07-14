@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { db } from "./db";
 
 export const authConfig: NextAuthConfig = {
+  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
   adapter: PrismaAdapter(db),
   session: { strategy: "jwt" },
   providers: [
@@ -47,6 +48,16 @@ export const authConfig: NextAuthConfig = {
     })
   ],
   callbacks: {
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const isProtected = nextUrl.pathname.startsWith('/dashboard') || nextUrl.pathname.startsWith('/workflow') || nextUrl.pathname === '/';
+      
+      if (isProtected) {
+        if (isLoggedIn) return true;
+        return false; // Redirect unauthenticated users to login page
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

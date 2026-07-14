@@ -1,8 +1,7 @@
 import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/lib/api-helpers";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
-import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { aiConfig, generateTextWithGemini, MODEL_IDS } from "@/lib/ai/config";
 import { PLAN_GENERATION_SYSTEM_PROMPT } from "@/lib/ai/plan-prompts";
 
 export async function POST(req: NextRequest) {
@@ -31,8 +30,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { text } = await generateText({
-      model: openai("gpt-4o"),
+    const { text } = await generateTextWithGemini(MODEL_IDS.PRO, {
       system: PLAN_GENERATION_SYSTEM_PROMPT,
       prompt,
     });

@@ -1,8 +1,7 @@
 import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/lib/api-helpers";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
-import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { aiConfig, generateTextWithGemini, MODEL_IDS } from "@/lib/ai/config";
 import { FULL_REVIEW_SYSTEM_PROMPT } from "@/lib/ai/review-prompts";
 import { CheckStatus, ReviewCheckType } from "@prisma/client";
 
@@ -46,8 +45,7 @@ ${planContent}
 ${tasksData}
 `;
 
-    const { text } = await generateText({
-      model: openai("gpt-4o"),
+    const { text } = await generateTextWithGemini(MODEL_IDS.FLASH, {
       system: FULL_REVIEW_SYSTEM_PROMPT,
       prompt,
     });

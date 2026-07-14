@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/lib/api-helpers";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { ArtifactVersionStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { logEvent } from "@/lib/instrumentation";

@@ -1,8 +1,7 @@
 import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/lib/api-helpers";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
-import { generateText } from "ai";
-import { aiConfig } from "@/lib/ai/config";
+import { aiConfig, generateTextWithGemini, MODEL_IDS } from "@/lib/ai/config";
 import { SPEC_REGENERATE_SYSTEM_PROMPT } from "@/lib/ai/spec-regenerate-prompts";
 
 export const maxDuration = 60; // 60 seconds max duration for Vercel
@@ -32,8 +31,7 @@ export async function POST(req: NextRequest) {
     userPrompt += `\nPlease rewrite the specification to incorporate the answers above into the appropriate sections.`;
 
     // Call the LLM
-    const { text } = await generateText({
-      model: aiConfig.model,
+    const { text } = await generateTextWithGemini(MODEL_IDS.PRO, {
       temperature: aiConfig.temperature,
       system: SPEC_REGENERATE_SYSTEM_PROMPT,
       prompt: userPrompt,
@@ -86,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     // Run drift engine after transaction
     if (latestVersion) {
-      const { handleArtifactDrift } = await import("@/lib/drift-engine");
+      const { handleArtifactDrift } = await import("@/server/services/drift-engine");
       await handleArtifactDrift(workflowId, "SPEC", latestVersion.id, newVersion.id);
     }
 

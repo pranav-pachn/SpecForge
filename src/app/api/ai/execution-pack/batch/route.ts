@@ -1,8 +1,7 @@
 import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/lib/api-helpers";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
-import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { aiConfig, generateTextWithOpenRouter, MODEL_IDS } from "@/lib/ai/config";
 import { EXECUTION_PACK_SYSTEM_PROMPT } from "@/lib/ai/execution-prompts";
 import { ToolName } from "@prisma/client";
 
@@ -58,8 +57,7 @@ ${configStr || "No specific formatting required. Use clear markdown."}
 Generate the optimal prompt/execution pack for this tool to implement this task.
 `;
 
-      const { text } = await generateText({
-        model: openai("gpt-4o"),
+      const { text } = await generateTextWithOpenRouter(MODEL_IDS.EXECUTION_PACK, {
         system: EXECUTION_PACK_SYSTEM_PROMPT,
         prompt,
       });
