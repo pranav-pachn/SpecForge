@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
-import { aiConfig, generateTextWithOpenRouter, MODEL_IDS } from "@/lib/ai/config";
-import { EXECUTION_PACK_SYSTEM_PROMPT } from "@/lib/ai/execution-prompts";
+import { gateway } from "@/lib/ai/gateway/gateway";
+import { PromptRegistry } from "@/lib/ai/prompts/registry";
 import { ToolName } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
@@ -56,10 +56,23 @@ ${configStr || "No specific formatting required. Use clear markdown."}
 Generate the optimal prompt/execution pack for this tool to implement this task.
 `;
 
-    const { text } = await generateTextWithOpenRouter(MODEL_IDS.EXECUTION_PACK, {
-      system: EXECUTION_PACK_SYSTEM_PROMPT,
+    const { text } = await gateway.execute({
+      capability: "spec",
+      system: PromptRegistry.spec(),
       prompt,
     });
+
+    let packContent = text;
+    try {
+      if (text.includes("{") && text.includes("}")) {
+        const jsonStr = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
+        // validate JSON
+        JSON.parse(jsonStr);
+        packContent = jsonStr;
+      }
+    } catch (e) {
+      console.warn("Could not parse AI response as JSON", e);
+    }
 
     // Determine the version this pack belongs to (we use the plan's version)
     // Actually, ExecutionPacks are generated from tasks which belong to a versionId (the Plan's version).
@@ -72,7 +85,7 @@ Generate the optimal prompt/execution pack for this tool to implement this task.
     if (pack) {
       pack = await db.executionPack.update({
         where: { id: pack.id },
-        data: { content: text }
+        data: { content: packContent }
       });
     } else {
       pack = await db.executionPack.create({
@@ -80,7 +93,7 @@ Generate the optimal prompt/execution pack for this tool to implement this task.
           versionId: task.versionId,
           taskId: task.id,
           toolName: toolName as ToolName,
-          content: text
+          content: packContent
         }
       });
     }

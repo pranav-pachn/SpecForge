@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, ListTodo, Plus, ArrowRight } from "lucide-react";
+import { Loader2, ListTodo, Plus, ArrowRight, Split } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TaskCard from "@/features/workflows/components/workflows/TaskCard";
 
@@ -11,6 +11,9 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
+  const [taskToSplitId, setTaskToSplitId] = useState<string | null>(null);
+  const [splitCount, setSplitCount] = useState<number>(2);
 
   useEffect(() => {
     fetchData();
@@ -74,41 +77,42 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
     }
   };
 
-  const handleSplit = async (id: string) => {
-    const taskIndex = tasks.findIndex(t => t.id === id);
-    if (taskIndex === -1) return;
-    
-    const taskToSplit = tasks[taskIndex];
-    
+  const handleDelete = async (id: string) => {
     try {
-      // Create a new task right after this one
-      const res = await fetch(`/api/tasks`, {
+      await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+      setTasks(prev => prev.filter(t => t.id !== id));
+    } catch (e) {
+      console.error("Failed to delete task:", e);
+    }
+  };
+
+  const handleSplit = (id: string) => {
+    setTaskToSplitId(id);
+    setIsSplitModalOpen(true);
+  };
+
+  const confirmSplit = async () => {
+    if (!taskToSplitId) return;
+    setGenerating(true);
+    try {
+      const res = await fetch(`/api/ai/tasks/split`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           workflowId,
-          versionId: taskToSplit.versionId,
-          title: `${taskToSplit.title} (Part 2)`,
-          description: "Split from previous task. Please update.",
-          priority: taskToSplit.priority,
-          order: taskToSplit.order + 1,
+          taskId: taskToSplitId,
+          count: splitCount
         }),
       });
-      
       if (res.ok) {
-        // Increment order for all subsequent tasks
-        const updates = tasks.slice(taskIndex + 1).map(t => 
-          fetch(`/api/tasks/${t.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ order: t.order + 1 }),
-          })
-        );
-        await Promise.all(updates);
         await fetchData();
+        setIsSplitModalOpen(false);
+        setTaskToSplitId(null);
       }
     } catch (e) {
-      console.error("Failed to split task:", e);
+      console.error("Failed to split task via AI:", e);
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -199,7 +203,7 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
 
   if (!planVersion || planVersion.status !== "APPROVED") {
     return (
-      <div className="bg-white dark:bg-slate-950 border rounded-xl p-12 text-center shadow-sm">
+      <div className="glass border-white/10 border rounded-xl p-12 text-center shadow-sm">
         <ListTodo className="w-12 h-12 text-slate-300 mx-auto mb-4" />
         <h3 className="text-xl font-bold mb-2">Plan Not Approved</h3>
         <p className="text-slate-500 mb-6">You must generate and approve the Implementation Plan before breaking down tasks.</p>
@@ -209,7 +213,7 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
 
   if (tasks.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-950 border rounded-xl p-12 text-center shadow-sm">
+      <div className="glass border-white/10 border rounded-xl p-12 text-center shadow-sm">
         <ListTodo className="w-12 h-12 text-blue-500 mx-auto mb-4" />
         <h3 className="text-xl font-bold mb-2">Task Breakdown</h3>
         <p className="text-slate-500 mb-6 max-w-lg mx-auto">
@@ -230,8 +234,8 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
   const completedTasks = tasks.filter(t => t.status === "DONE").length;
 
   return (
-    <div className="bg-white dark:bg-slate-950 border rounded-xl shadow-sm overflow-hidden">
-      <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-5 flex items-center justify-between">
+    <div className="glass border-white/10 border rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white/5 border-b px-6 py-5 flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
             <ListTodo className="w-6 h-6 text-blue-500" />
@@ -254,7 +258,7 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
           <button
             onClick={handleGenerate}
             disabled={generating}
-            className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-slate-600 glass border-white/20 rounded-md hover:bg-white/10 text-white flex items-center gap-2"
           >
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Regenerate All"}
           </button>
@@ -278,6 +282,7 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
               onSplit={handleSplit}
               onMoveUp={(id) => handleMove(id, "up")}
               onMoveDown={(id) => handleMove(id, "down")}
+              onDelete={handleDelete}
               isFirst={index === 0}
               isLast={index === tasks.length - 1}
             />
@@ -292,6 +297,60 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
           </button>
         </div>
       </div>
+
+      {isSplitModalOpen && taskToSplitId && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="glass border-white/10 border rounded-2xl p-6 shadow-2xl max-w-md w-full animate-in fade-in zoom-in-95">
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Split className="w-5 h-5 text-blue-500" />
+              Split Task with AI
+            </h3>
+            <p className="text-slate-500 mb-6 text-sm">
+              The AI will analyze the current task and break it down into smaller, actionable sub-tasks, replacing this one.
+            </p>
+            
+            <div className="space-y-3 mb-8">
+              <label className="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                <input 
+                  type="radio" 
+                  name="splitCount" 
+                  checked={splitCount === 2} 
+                  onChange={() => setSplitCount(2)}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="font-medium">Split into 2 tasks</span>
+              </label>
+              <label className="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                <input 
+                  type="radio" 
+                  name="splitCount" 
+                  checked={splitCount === 3} 
+                  onChange={() => setSplitCount(3)}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="font-medium">Split into 3 tasks</span>
+              </label>
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setIsSplitModalOpen(false)}
+                className="px-4 py-2 font-medium text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                disabled={generating}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmSplit}
+                disabled={generating}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm flex items-center gap-2 disabled:opacity-50 transition-colors"
+              >
+                {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Generate Split"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

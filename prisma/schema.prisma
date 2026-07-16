@@ -7,6 +7,336 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id            String            @id @default(cuid())
+  email         String            @unique
+  name          String?
+  passwordHash  String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  workflows     Workflow[]
+  workspaces    WorkspaceMember[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Workspace {
+  id        String            @id @default(cuid())
+  name      String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  projects  Project[]
+  members   WorkspaceMember[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        String    @default("MEMBER")
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+model Project {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  workspaceId String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workflows   Workflow[]
+}
+
+model Workflow {
+  id                 String              @id @default(cuid())
+  name               String
+  status             WorkflowStatus      @default(DRAFT)
+  projectId          String
+  creatorId          String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  artifacts          Artifact[]
+  driftAnalyses      DriftAnalysis[]
+  engineeringReviews EngineeringReview[]
+  tasks              Task[]
+  validationReports  ValidationReport[]
+  creator            User                @relation(fields: [creatorId], references: [id])
+  project            Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Artifact {
+  id         String            @id @default(cuid())
+  workflowId String
+  type       ArtifactType
+  title      String
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  workflow   Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  versions   ArtifactVersion[]
+}
+
+model ArtifactVersion {
+  id                  String                  @id @default(cuid())
+  artifactId          String
+  version             Int
+  content             String
+  status              ArtifactVersionStatus   @default(DRAFT)
+  createdAt           DateTime                @default(now())
+  artifact            Artifact                @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+  clarifications      ClarificationQuestion[]
+  driftAsNew          DriftAnalysis[]         @relation("DriftNewVersion")
+  driftAsOld          DriftAnalysis[]         @relation("DriftOldVersion")
+  sourceOfDriftEvents DriftEvent[]            @relation("SourceVersion")
+  driftEvents         DriftEvent[]
+  engineeringReviews  EngineeringReview[]
+  executionPacks      ExecutionPack[]
+  reviewChecks        ReviewCheck[]
+  tasks               Task[]
+  validationReports   ValidationReport[]
+}
+
+model ClarificationQuestion {
+  id        String               @id @default(cuid())
+  versionId String
+  question  String
+  category  String?
+  status    ClarificationStatus  @default(OPEN)
+  createdAt DateTime             @default(now())
+  answer    ClarificationAnswer?
+  version   ArtifactVersion      @relation(fields: [versionId], references: [id], onDelete: Cascade)
+}
+
+model ClarificationAnswer {
+  id         String                @id @default(cuid())
+  questionId String                @unique
+  answer     String
+  createdAt  DateTime              @default(now())
+  question   ClarificationQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Task {
+  id                 String            @id @default(cuid())
+  workflowId         String
+  versionId          String
+  title              String
+  description        String?
+  status             TaskStatus        @default(TODO)
+  priority           Int?
+  order              Int               @default(0)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  acceptanceCriteria String?
+  verificationNotes  String?
+  complexity         String?
+  requirements       String[]
+  executionPacks     ExecutionPack[]
+  reviewFindings     ReviewFinding[]
+  version            ArtifactVersion   @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  workflow           Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  dependencies       TaskDependency[]  @relation("DependentTasks")
+  dependsOn          TaskDependency[]  @relation("TaskDependencies")
+  validationIssues   ValidationIssue[]
+}
+
+model TaskDependency {
+  id          String @id @default(cuid())
+  taskId      String
+  dependsOnId String
+  dependsOn   Task   @relation("DependentTasks", fields: [dependsOnId], references: [id], onDelete: Cascade)
+  task        Task   @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, dependsOnId])
+}
+
+model ExecutionPack {
+  id        String          @id @default(cuid())
+  versionId String
+  toolName  ToolName
+  content   String
+  createdAt DateTime        @default(now())
+  taskId    String?
+  task      Task?           @relation(fields: [taskId], references: [id])
+  version   ArtifactVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+}
+
+model ReviewCheck {
+  id          String          @id @default(cuid())
+  versionId   String
+  type        ReviewCheckType
+  description String
+  status      CheckStatus     @default(PENDING)
+  createdAt   DateTime        @default(now())
+  version     ArtifactVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+}
+
+model DriftEvent {
+  id              String           @id @default(cuid())
+  versionId       String
+  sourceVersionId String?
+  entityType      DriftEntityType
+  entityId        String
+  description     String
+  resolved        Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  sourceVersion   ArtifactVersion? @relation("SourceVersion", fields: [sourceVersionId], references: [id])
+  version         ArtifactVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
+}
+
+model ToolProfile {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  config    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EventLog {
+  id         String    @id @default(cuid())
+  eventType  EventType
+  workflowId String?
+  userId     String?
+  metadata   String?
+  createdAt  DateTime  @default(now())
+}
+
+model EngineeringReview {
+  id                String          @id @default(cuid())
+  workflowId        String
+  versionId         String
+  overallScore      Int
+  coverageScore     Int
+  testingScore      Int
+  securityScore     Int
+  performanceScore  Int
+  architectureScore Int
+  deploymentScore   Int
+  rollbackScore     Int
+  status            String          @default("PENDING")
+  coverageData      String?
+  testingData       String?
+  securityData      String?
+  performanceData   String?
+  architectureData  String?
+  deploymentData    String?
+  rollbackData      String?
+  generatedAt       DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  version           ArtifactVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  workflow          Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  findings          ReviewFinding[]
+}
+
+model ReviewFinding {
+  id          String            @id @default(cuid())
+  reviewId    String
+  category    String
+  severity    String
+  title       String
+  description String
+  resolved    Boolean           @default(false)
+  taskId      String?
+  review      EngineeringReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  task        Task?             @relation(fields: [taskId], references: [id])
+}
+
+model ValidationReport {
+  id               String            @id @default(cuid())
+  workflowId       String
+  versionId        String
+  overallScore     Int
+  coverageScore    Int
+  taskMappingScore Int
+  acceptanceScore  Int
+  executionScore   Int
+  dependencyScore  Int
+  duplicateScore   Int
+  status           String            @default("PENDING")
+  coverageData     String?
+  taskMappingData  String?
+  acceptanceData   String?
+  executionData    String?
+  dependencyData   String?
+  duplicateData    String?
+  generatedAt      DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  issues           ValidationIssue[]
+  version          ArtifactVersion   @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  workflow         Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+}
+
+model ValidationIssue {
+  id                  String           @id @default(cuid())
+  reportId            String
+  severity            String
+  category            String
+  title               String
+  description         String
+  linkedRequirementId String?
+  linkedTaskId        String?
+  recommendation      String?
+  resolved            Boolean          @default(false)
+  taskId              String?
+  report              ValidationReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  task                Task?            @relation(fields: [taskId], references: [id])
+}
+
+model DriftAnalysis {
+  id           String          @id @default(cuid())
+  workflowId   String
+  oldVersionId String
+  newVersionId String
+  diffData     String
+  impactData   String
+  summary      String
+  status       String          @default("DETECTED")
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  newVersion   ArtifactVersion @relation("DriftNewVersion", fields: [newVersionId], references: [id], onDelete: Cascade)
+  oldVersion   ArtifactVersion @relation("DriftOldVersion", fields: [oldVersionId], references: [id], onDelete: Cascade)
+  workflow     Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+}
+
 enum WorkflowStatus {
   DRAFT
   CLARIFYING
@@ -18,6 +348,7 @@ enum WorkflowStatus {
   VALIDATING
   COMPLETED
   ARCHIVED
+  ENGINEERING_REVIEW
 }
 
 enum ArtifactType {
@@ -67,6 +398,7 @@ enum DriftEntityType {
   PACK
   REVIEW
   VALIDATION
+  PLAN
 }
 
 enum ToolName {
@@ -74,211 +406,6 @@ enum ToolName {
   CLAUDE_CODE
   WINDSURF
   CUSTOM
-}
-
-model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  name         String?
-  passwordHash String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  workspaces WorkspaceMember[]
-  workflows  Workflow[]
-}
-
-// Keeping Workspace and WorkspaceMember per MVP requirements,
-// though we will hide them in the UI for now.
-model Workspace {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  members  WorkspaceMember[]
-  projects Project[]
-}
-
-model WorkspaceMember {
-  id          String    @id @default(cuid())
-  userId      String
-  workspaceId String
-  role        String    @default("MEMBER")
-  createdAt   DateTime  @default(now())
-
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, workspaceId])
-}
-
-model Project {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  workspaceId String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  workflows Workflow[]
-}
-
-model Workflow {
-  id        String         @id @default(cuid())
-  name      String
-  status    WorkflowStatus @default(DRAFT)
-  projectId String
-  creatorId String
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-
-  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  creator   User       @relation(fields: [creatorId], references: [id])
-  artifacts Artifact[]
-  tasks     Task[]
-}
-
-model Artifact {
-  id         String       @id @default(cuid())
-  workflowId String
-  type       ArtifactType
-  title      String
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-
-  workflow Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  versions ArtifactVersion[]
-}
-
-model ArtifactVersion {
-  id         String                @id @default(cuid())
-  artifactId String
-  version    Int
-  content    String                @db.Text
-  status     ArtifactVersionStatus @default(DRAFT)
-  createdAt  DateTime              @default(now())
-
-  artifact            Artifact                @relation(fields: [artifactId], references: [id], onDelete: Cascade)
-  driftEvents         DriftEvent[]
-  sourceOfDriftEvents DriftEvent[]            @relation("SourceVersion")
-  tasks               Task[]
-  clarifications      ClarificationQuestion[]
-  executionPacks      ExecutionPack[]
-  reviewChecks        ReviewCheck[]
-  validationChecks    ValidationCheck[]
-}
-
-model ClarificationQuestion {
-  id        String              @id @default(cuid())
-  versionId String
-  question  String
-  category  String?
-  status    ClarificationStatus @default(OPEN)
-  createdAt DateTime            @default(now())
-
-  version ArtifactVersion      @relation(fields: [versionId], references: [id], onDelete: Cascade)
-  answer  ClarificationAnswer?
-}
-
-model ClarificationAnswer {
-  id         String   @id @default(cuid())
-  questionId String   @unique
-  answer     String
-  createdAt  DateTime @default(now())
-
-  question ClarificationQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
-}
-
-model Task {
-  id                 String     @id @default(cuid())
-  workflowId         String
-  versionId          String
-  title              String
-  description        String?    @db.Text
-  acceptanceCriteria String?    @db.Text
-  verificationNotes  String?    @db.Text
-  status             TaskStatus @default(TODO)
-  priority           Int?
-  order              Int        @default(0)
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
-
-  workflow Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  version  ArtifactVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
-
-  dependencies TaskDependency[] @relation("DependentTasks")
-  dependsOn    TaskDependency[] @relation("TaskDependencies")
-  executionPacks ExecutionPack[]
-}
-
-model TaskDependency {
-  id          String @id @default(cuid())
-  taskId      String
-  dependsOnId String
-
-  task      Task @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
-  dependsOn Task @relation("DependentTasks", fields: [dependsOnId], references: [id], onDelete: Cascade)
-
-  @@unique([taskId, dependsOnId])
-}
-
-model ExecutionPack {
-  id        String   @id @default(cuid())
-  versionId String
-  taskId    String?
-  toolName  ToolName
-  content   String   @db.Text
-  createdAt DateTime @default(now())
-
-  version ArtifactVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
-  task    Task?           @relation(fields: [taskId], references: [id], onDelete: SetNull)
-}
-
-model ReviewCheck {
-  id          String          @id @default(cuid())
-  versionId   String
-  type        ReviewCheckType
-  description String
-  status      CheckStatus     @default(PENDING)
-  createdAt   DateTime        @default(now())
-
-  version ArtifactVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
-}
-
-model ValidationCheck {
-  id          String      @id @default(cuid())
-  versionId   String
-  criteria    String
-  category    String?
-  status      CheckStatus @default(PENDING)
-  resultNotes String?     @db.Text
-  createdAt   DateTime    @default(now())
-
-  version ArtifactVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
-}
-
-model DriftEvent {
-  id              String          @id @default(cuid())
-  versionId       String          // Downstream artifact version impacted
-  sourceVersionId String?         // Changed source version that caused drift
-  entityType      DriftEntityType
-  entityId        String
-  description     String
-  resolved        Boolean         @default(false)
-  createdAt       DateTime        @default(now())
-
-  version       ArtifactVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
-  sourceVersion ArtifactVersion? @relation("SourceVersion", fields: [sourceVersionId], references: [id], onDelete: SetNull)
-}
-
-model ToolProfile {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  config    String   @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 enum EventType {
@@ -289,13 +416,4 @@ enum EventType {
   TASKS_EXPORTED
   REVIEW_ISSUE_RESOLVED
   STALE_ARTIFACT_TRIGGERED
-}
-
-model EventLog {
-  id          String    @id @default(cuid())
-  eventType   EventType
-  workflowId  String?
-  userId      String?
-  metadata    String?   @db.Text // JSON string
-  createdAt   DateTime  @default(now())
 }

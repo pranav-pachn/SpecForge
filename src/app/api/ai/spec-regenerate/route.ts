@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
-import { aiConfig, generateTextWithGemini, MODEL_IDS } from "@/lib/ai/config";
-import { SPEC_REGENERATE_SYSTEM_PROMPT } from "@/lib/ai/spec-regenerate-prompts";
+import { gateway } from "@/lib/ai/gateway/gateway";
+import { PromptRegistry } from "@/lib/ai/prompts/registry";
 
 export const maxDuration = 60; // 60 seconds max duration for Vercel
 
@@ -31,11 +31,11 @@ export async function POST(req: NextRequest) {
     userPrompt += `\nPlease rewrite the specification to incorporate the answers above into the appropriate sections.`;
 
     // Call the LLM
-    const { text } = await generateTextWithGemini(MODEL_IDS.PRO, {
-      temperature: aiConfig.temperature,
-      system: SPEC_REGENERATE_SYSTEM_PROMPT,
+    const { text } = await gateway.execute({
+      capability: "spec",
+      system: PromptRegistry.specRegenerate(),
       prompt: userPrompt,
-    });
+      });
 
     // We will save this as a new version of the spec artifact.
     // So we first find the artifactId from the current version.

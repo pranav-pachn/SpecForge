@@ -1,7 +1,7 @@
 import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { db } from "@/lib/db";
-import { aiConfig, generateTextWithGemini, MODEL_IDS } from "@/lib/ai/config";
-import { SPEC_GENERATION_SYSTEM_PROMPT } from "@/lib/ai/prompts";
+import { gateway } from "@/lib/ai/gateway/gateway";
+import { PromptRegistry } from "@/lib/ai/prompts/registry";
 import { ArtifactVersionStatus, WorkflowStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { logEvent } from "@/lib/instrumentation";
@@ -55,11 +55,11 @@ Please generate the product-ready feature specification using the required 12-se
 `;
 
     // Call the LLM
-    const { text } = await generateTextWithGemini(MODEL_IDS.PRO, {
-      temperature: aiConfig.temperature,
-      system: SPEC_GENERATION_SYSTEM_PROMPT,
+    const { text } = await gateway.execute({
+      capability: "spec",
+      system: PromptRegistry.spec(),
       prompt: userPrompt,
-    });
+      });
 
     // Save the generated content to the database
     // We update the draft version content and set its status to NEEDS_REVIEW
@@ -84,8 +84,15 @@ Please generate the product-ready feature specification using the required 12-se
     });
 
     return jsonResponse(updatedVersion);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Spec Generation Error:", error);
-    return apiError("Failed to generate spec", 500);
+    
+    // Extract the most helpful error message possible
+    let errorMessage = "Failed to generate spec";
+    if (error.message) {
+      errorMessage = `AI Error: ${error.message}`;
+    }
+    
+    return apiError(errorMessage, 500);
   }
 }

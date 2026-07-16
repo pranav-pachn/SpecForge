@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
-import { aiConfig, generateTextWithGemini, MODEL_IDS } from "@/lib/ai/config";
+import { gateway } from "@/lib/ai/gateway/gateway";
 import { ReviewCheckType, CheckStatus } from "@prisma/client";
 
 const REVIEW_GATE_PROMPT = `
@@ -41,7 +41,8 @@ export async function POST(req: NextRequest) {
       return apiError("versionId and specContent are required", 400);
     }
 
-    const { text } = await generateTextWithGemini(MODEL_IDS.FLASH, {
+    const { text } = await gateway.execute({
+      capability: "review_gate",
       system: REVIEW_GATE_PROMPT,
       prompt: `Analyze this specification:\n\n${specContent}`,
     });

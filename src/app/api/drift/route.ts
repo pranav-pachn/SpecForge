@@ -23,7 +23,22 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" }
     });
 
-    return jsonResponse(driftEvents);
+    const analysis = await db.driftAnalysis.findFirst({
+      where: {
+        workflowId,
+        workflow: { creatorId: user.id }
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        oldVersion: { include: { artifact: true } },
+        newVersion: { include: { artifact: true } }
+      }
+    });
+
+    return jsonResponse({
+      events: driftEvents,
+      analysis: analysis
+    });
   } catch (error) {
     console.error("Drift Fetch Error:", error);
     return apiError("Failed to fetch drift events", 500);

@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
-import { aiConfig, generateTextWithGemini, MODEL_IDS } from "@/lib/ai/config";
-import { PLAN_GENERATION_SYSTEM_PROMPT } from "@/lib/ai/plan-prompts";
+import { gateway } from "@/lib/ai/gateway/gateway";
+import { PromptRegistry } from "@/lib/ai/prompts/registry";
 
 export async function POST(req: NextRequest) {
   const user = await getAuthenticatedUser();
@@ -30,10 +30,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { text } = await generateTextWithGemini(MODEL_IDS.PRO, {
-      system: PLAN_GENERATION_SYSTEM_PROMPT,
+    const { text } = await gateway.execute({
+      capability: "planning",
+      system: PromptRegistry.plan(),
       prompt,
-    });
+      });
 
     // Create the PLAN artifact
     const artifact = await db.$transaction(async (tx) => {

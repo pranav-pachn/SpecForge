@@ -10,7 +10,7 @@ export default function PipelineStages({ currentStatus }: { currentStatus: Workf
     <div className="w-full py-8">
       <div className="relative flex items-center justify-between px-4">
         {/* Background track line */}
-        <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-0.5 bg-slate-200 dark:bg-slate-800 rounded-full" />
+        <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-0.5 bg-white/10 rounded-full" />
         
         {/* Progress line */}
         <div 
@@ -32,10 +32,10 @@ export default function PipelineStages({ currentStatus }: { currentStatus: Workf
               
               <div 
                 className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center border-2 bg-white dark:bg-slate-950 transition-all duration-300 shadow-sm",
-                  isCompleted ? "border-blue-600 bg-blue-600 text-white" : 
-                  isCurrent ? "border-blue-600 text-blue-600 ring-4 ring-blue-50 dark:ring-blue-900/20" : 
-                  "border-slate-300 dark:border-slate-700 text-slate-400 hover:border-slate-400"
+                  "w-8 h-8 rounded-full flex items-center justify-center border-2 bg-[#0a0a14] transition-all duration-300 shadow-sm",
+                  isCompleted ? "border-blue-500 bg-blue-600 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]" : 
+                  isCurrent ? "border-blue-500 text-blue-400 ring-4 ring-blue-500/20" : 
+                  "border-white/10 text-slate-500 hover:border-white/20"
                 )}
               >
                 {isCompleted ? <Check className="w-4 h-4" /> :
@@ -45,9 +45,9 @@ export default function PipelineStages({ currentStatus }: { currentStatus: Workf
               <div className="absolute top-10 w-28 text-center pointer-events-none">
                 <span className={cn(
                   "text-[10px] sm:text-xs font-semibold uppercase tracking-wider transition-colors duration-300",
-                  isCurrent ? "text-blue-600 dark:text-blue-400" : 
-                  isCompleted ? "text-slate-700 dark:text-slate-300" :
-                  "text-slate-400 dark:text-slate-600"
+                  isCurrent ? "text-blue-400" : 
+                  isCompleted ? "text-slate-300" :
+                  "text-slate-600"
                 )}>
                   {WORKFLOW_STATUS_LABELS[stage]}
                 </span>

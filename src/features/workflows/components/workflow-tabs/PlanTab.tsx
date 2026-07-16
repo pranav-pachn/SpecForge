@@ -33,7 +33,7 @@ export default function PlanTab({
         .filter((c: any) => c.status === "ANSWERED")
         .map((c: any) => ({ question: c.question, answer: c.answer?.answer }));
 
-      await fetch(`/api/ai/plan`, {
+      const res = await fetch(`/api/ai/plan`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -42,6 +42,10 @@ export default function PlanTab({
           clarifications: answeredClarifications
         }),
       });
+      const data = await res.json();
+      if (res.ok && data.content) {
+        setContent(data.content);
+      }
       router.refresh();
       setIsEditing(false);
       onMutate?.();

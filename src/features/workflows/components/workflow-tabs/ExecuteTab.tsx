@@ -96,7 +96,7 @@ export default function ExecuteTab({ workflowId, onMutate }: { workflowId: strin
       await fetch(`/api/workflows/${workflowId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "REVIEWING" }),
+        body: JSON.stringify({ status: "ENGINEERING_REVIEW" }),
       });
       router.refresh();
       onMutate?.();
@@ -111,7 +111,7 @@ export default function ExecuteTab({ workflowId, onMutate }: { workflowId: strin
 
   if (tasks.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-950 border rounded-xl p-12 text-center shadow-sm">
+      <div className="glass border-white/10 border rounded-xl p-12 text-center shadow-sm">
         <ServerCrash className="w-12 h-12 text-slate-300 mx-auto mb-4" />
         <h3 className="text-xl font-bold mb-2">No Tasks Available</h3>
         <p className="text-slate-500 mb-6">You must break down tasks before generating execution packs.</p>
@@ -120,8 +120,8 @@ export default function ExecuteTab({ workflowId, onMutate }: { workflowId: strin
   }
 
   return (
-    <div className="bg-white dark:bg-slate-950 border rounded-xl shadow-sm overflow-hidden">
-      <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-5 flex items-center justify-between">
+    <div className="glass border-white/10 border rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white/5 border-b px-6 py-5 flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
             <Terminal className="w-6 h-6 text-blue-500" />
@@ -131,7 +131,7 @@ export default function ExecuteTab({ workflowId, onMutate }: { workflowId: strin
         </div>
         
         <div className="flex items-center gap-3">
-          <div className="flex items-center border rounded-md overflow-hidden bg-white dark:bg-slate-800">
+          <div className="flex items-center border rounded-md overflow-hidden glass border-white/10">
             <button
               onClick={() => setSelectedTool("CURSOR")}
               className={`px-3 py-1.5 text-sm font-medium transition-colors ${selectedTool === "CURSOR" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50" : "text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
@@ -144,12 +144,18 @@ export default function ExecuteTab({ workflowId, onMutate }: { workflowId: strin
             >
               Claude Code
             </button>
+            <button
+              onClick={() => setSelectedTool("WINDSURF")}
+              className={`px-3 py-1.5 text-sm font-medium border-l transition-colors ${selectedTool === "WINDSURF" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50" : "text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
+            >
+              Windsurf
+            </button>
           </div>
           
           <button
             onClick={handleGenerateAll}
             disabled={generatingAll}
-            className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-slate-600 glass border-white/20 rounded-md hover:bg-white/10 text-white flex items-center gap-2"
           >
             {generatingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : "Generate All"}
           </button>
@@ -158,7 +164,7 @@ export default function ExecuteTab({ workflowId, onMutate }: { workflowId: strin
             onClick={handleContinue}
             className="px-5 py-2 rounded-md font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center gap-2"
           >
-            Continue to Review <ArrowRight className="w-4 h-4" />
+            Continue to Engineering Review <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>

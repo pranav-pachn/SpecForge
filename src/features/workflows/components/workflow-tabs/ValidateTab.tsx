@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, ClipboardCheck, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
+import { Loader2, ClipboardCheck, ArrowRight, ShieldCheck, RefreshCw, Wand2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import ValidationScoreHero from "../validation/ValidationScoreHero";
+import ValidationCategoryCard from "../validation/ValidationCategoryCard";
 
 export default function ValidateTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
   const router = useRouter();
   const [workflow, setWorkflow] = useState<any>(null);
-  const [checks, setChecks] = useState<any[]>([]);
+  const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [validating, setValidating] = useState(false);
   const [completing, setCompleting] = useState(false);
@@ -19,18 +21,13 @@ export default function ValidateTab({ workflowId, onMutate }: { workflowId: stri
   const fetchData = async () => {
     setLoading(true);
     try {
-      const wfRes = await fetch(`/api/workflows/${workflowId}`);
-      const wfData = await wfRes.json();
+      const [wfRes, repRes] = await Promise.all([
+        fetch(`/api/workflows/${workflowId}`),
+        fetch(`/api/validation-reports?workflowId=${workflowId}`)
+      ]);
+      const [wfData, repData] = await Promise.all([wfRes.json(), repRes.json()]);
       setWorkflow(wfData);
-
-      const spec = wfData.artifacts?.find((a: any) => a.type === "SPEC");
-      const versionId = spec?.versions?.[0]?.id;
-
-      if (versionId) {
-        const chRes = await fetch(`/api/ai/validation?versionId=${versionId}`);
-        const chData = await chRes.json();
-        setChecks(chData || []);
-      }
+      setReport(repData);
     } catch (e) {
       console.error(e);
     } finally {
@@ -57,6 +54,7 @@ export default function ValidateTab({ workflowId, onMutate }: { workflowId: stri
   };
 
   const handleComplete = async () => {
+    if (report?.overallScore < 80) return;
     setCompleting(true);
     try {
       await fetch(`/api/workflows/${workflowId}`, {
@@ -74,105 +72,138 @@ export default function ValidateTab({ workflowId, onMutate }: { workflowId: stri
   };
 
   if (loading) {
-    return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>;
+    return (
+      <div className="flex flex-col items-center justify-center p-20 gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+        <p className="text-sm text-slate-500 animate-pulse">Loading validation report...</p>
+      </div>
+    );
   }
 
-  if (checks.length === 0) {
+  // Empty state — no report yet
+  if (!report) {
     return (
-      <div className="bg-white dark:bg-slate-950 border rounded-xl p-12 text-center shadow-sm">
-        <ClipboardCheck className="w-12 h-12 text-indigo-500 mx-auto mb-4" />
-        <h3 className="text-xl font-bold mb-2">Final Validation</h3>
-        <p className="text-slate-500 mb-6 max-w-lg mx-auto">
-          Verify that the implementation plan and tasks fully satisfy the original approved specification.
+      <div className="flex flex-col items-center justify-center py-20 px-8 text-center glass border border-dashed border-white/10 rounded-2xl">
+        <div className="w-20 h-20 bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+          <ClipboardCheck className="w-10 h-10 text-purple-600 dark:text-purple-400" />
+        </div>
+        <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">Validation Engine</h3>
+        <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md leading-relaxed">
+          Verify that the implementation plan and generated tasks fully satisfy the original approved specification without losing any requirements.
         </p>
+        <div className="flex flex-wrap gap-4 justify-center text-xs text-slate-400 mb-8">
+          {['Coverage', 'Task Mapping', 'Acceptance Criteria', 'Execution Packs', 'Dependencies', 'Duplicates'].map(cat => (
+            <span key={cat} className="px-3 py-1.5 border border-white/10 rounded-full font-medium">
+              {cat}
+            </span>
+          ))}
+        </div>
         <button
           onClick={handleValidate}
           disabled={validating}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-md font-medium inline-flex items-center gap-2 transition-colors"
+          className="group relative inline-flex items-center gap-3 px-8 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {validating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardCheck className="w-4 h-4" />}
-          Run Validation Checks
+          {validating ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Validating Artifacts...
+            </>
+          ) : (
+            <>
+              <Wand2 className="w-5 h-5" />
+              Run Validation Engine
+            </>
+          )}
         </button>
       </div>
     );
   }
 
-  const allPassed = checks.every(c => c.status === "PASSED");
-  const passedCount = checks.filter(c => c.status === "PASSED").length;
-  const categories = Array.from(new Set(checks.map(c => c.category)));
+  const parseData = (str: string) => {
+    try { return str ? JSON.parse(str) : null; } catch { return null; }
+  };
+
+  const categories = [
+    { id: 'coverage',    title: 'Requirement Coverage', score: report.coverageScore,    data: parseData(report.coverageData),    icon: '📋' },
+    { id: 'taskMapping', title: 'Task Mapping',         score: report.taskMappingScore, data: parseData(report.taskMappingData), icon: '🔗' },
+    { id: 'acceptance',  title: 'Acceptance Criteria',  score: report.acceptanceScore,  data: parseData(report.acceptanceData),  icon: '✅' },
+    { id: 'execution',   title: 'Execution Packs',      score: report.executionScore,   data: parseData(report.executionData),   icon: '📦' },
+    { id: 'dependency',  title: 'Dependencies',         score: report.dependencyScore,  data: parseData(report.dependencyData),  icon: '🕸️' },
+    { id: 'duplicate',   title: 'Duplicate Tasks',      score: report.duplicateScore,   data: parseData(report.duplicateData),   icon: '👯' },
+  ];
+
+  const isReady = report.overallScore >= 80;
+  const missingRequirements = report.issues?.filter((i: any) => i.severity === 'critical' && !i.taskId).length ?? 0;
 
   return (
-    <div className="bg-white dark:bg-slate-950 border rounded-xl shadow-sm overflow-hidden">
-      <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-5 flex items-center justify-between">
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <ClipboardCheck className="w-6 h-6 text-indigo-500" />
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
+            <ClipboardCheck className="w-6 h-6 text-purple-500" />
             Validation Results
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            {passedCount} of {checks.length} checks passed.
+            {missingRequirements > 0
+              ? `${missingRequirements} critical traceabilitiy issue${missingRequirements > 1 ? 's' : ''} found — generate fixes to proceed`
+              : isReady
+              ? 'All requirements are traced and tasks mapped. Ready for development.'
+              : 'Review validation issues and generate missing tasks to proceed.'}
           </p>
         </div>
-        
-        <div className="flex items-center gap-3">
+
+        <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={handleValidate}
             disabled={validating}
-            className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 flex items-center gap-2"
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-300 glass border-white/10 border border-white/10 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-sm"
           >
-            {validating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Re-run Validation"}
+            {validating ? (
+              <><Loader2 className="w-4 h-4 animate-spin" />Re-validating...</>
+            ) : (
+              <><RefreshCw className="w-4 h-4" />Re-run Validation</>
+            )}
           </button>
-          
-          <button
-            onClick={handleComplete}
-            disabled={completing || !allPassed}
-            className="px-5 py-2 rounded-md font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm transition-colors"
-          >
-            Complete Workflow <ArrowRight className="w-4 h-4" />
-          </button>
+
+          <div className="relative group">
+            <button
+              onClick={handleComplete}
+              disabled={completing || !isReady}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 disabled:shadow-none transition-all active:scale-95"
+            >
+              {completing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="w-4 h-4" />
+              )}
+              {completing ? 'Completing...' : 'Complete Workflow'}
+              {!completing && <ArrowRight className="w-4 h-4" />}
+            </button>
+
+            {!isReady && !completing && (
+              <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl z-10">
+                Score must be ≥ 80 to complete
+                <div className="absolute top-full right-4 border-4 border-transparent border-t-slate-900" />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="p-6">
-        <div className="space-y-8">
-          {categories.map(category => (
-            <div key={category || 'Uncategorized'}>
-              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 border-b pb-2">
-                {category || "General"}
-              </h3>
-              <div className="grid gap-3">
-                {checks.filter(c => c.category === category).map(check => {
-                  const isPass = check.status === "PASSED";
-                  
-                  return (
-                    <div 
-                      key={check.id} 
-                      className={`flex gap-3 p-3 rounded-lg border ${
-                        isPass ? 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900' :
-                        'border-red-200 bg-red-50 dark:border-red-900/30 dark:bg-red-900/10'
-                      }`}
-                    >
-                      <div className="mt-0.5 shrink-0">
-                        {isPass ? <CheckCircle2 className="w-5 h-5 text-green-500" /> :
-                         <XCircle className="w-5 h-5 text-red-500" />}
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-slate-900 dark:text-slate-100 text-sm">
-                          {check.criteria}
-                        </h4>
-                        {check.resultNotes && (
-                          <p className={`text-sm mt-1 ${isPass ? 'text-slate-500' : 'text-red-700 dark:text-red-400 font-medium'}`}>
-                            {check.resultNotes}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
+      <ValidationScoreHero report={report} />
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {categories.map(cat => (
+          <ValidationCategoryCard
+            key={cat.id}
+            title={cat.title}
+            emoji={cat.icon}
+            score={cat.score}
+            data={cat.data}
+            issues={report.issues?.filter((i: any) => i.category === cat.id) ?? []}
+            onFixGenerated={fetchData}
+          />
+        ))}
       </div>
     </div>
   );

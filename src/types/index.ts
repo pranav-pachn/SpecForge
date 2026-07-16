@@ -15,8 +15,10 @@ export type {
   TaskDependency,
   ExecutionPack,
   ReviewCheck,
-  ValidationCheck,
+  ValidationReport,
+  ValidationIssue,
   DriftEvent,
+  DriftAnalysis,
   ToolProfile,
 } from "@prisma/client";
 

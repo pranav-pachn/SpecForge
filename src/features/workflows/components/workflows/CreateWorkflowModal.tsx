@@ -95,7 +95,7 @@ export default function CreateWorkflowModal({
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 sm:p-6 transition-all duration-300 ${isOpen ? 'bg-black/40 backdrop-blur-sm opacity-100' : 'bg-transparent opacity-0 pointer-events-none'}`}>
       <div 
-        className={`bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-3xl my-8 flex flex-col max-h-[90vh] transition-all duration-300 ${isOpen ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-4 opacity-0'}`}
+        className={`glass border-white/10 rounded-2xl shadow-2xl w-full max-w-3xl my-8 flex flex-col max-h-[90vh] transition-all duration-300 ${isOpen ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-4 opacity-0'}`}
       >
         <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <h2 className="text-xl font-bold flex items-center gap-2">
@@ -111,11 +111,11 @@ export default function CreateWorkflowModal({
 
         <div className="p-6 overflow-y-auto flex-1 relative">
           {loading && (
-            <div className="absolute inset-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center">
+            <div className="absolute inset-0 z-10 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center">
               <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4 animate-pulse">
                 <Wand2 className="w-8 h-8 text-blue-600 animate-bounce" />
               </div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2">Forging your Spec...</h3>
+              <h3 className="text-lg font-bold text-slate-200 mb-2">Forging your Spec...</h3>
               <p className="text-slate-500 font-medium">Analyzing raw input and structuring requirements.</p>
             </div>
           )}
@@ -222,7 +222,7 @@ export default function CreateWorkflowModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700 transition-colors shadow-sm"
+              className="px-5 py-2.5 text-sm font-semibold glass text-slate-300 border-white/10 rounded-lg hover:bg-white/5 transition-colors shadow-sm"
               disabled={loading}
             >
               Cancel

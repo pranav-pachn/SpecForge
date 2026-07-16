@@ -56,9 +56,29 @@ export async function POST(req: NextRequest) {
       });
 
       if (!workspaceMember?.workspace.projects[0]) {
-        return apiError("No default project found for user", 400);
+        // Automatically create a workspace and project if the user doesn't have one (e.g., from Google Login)
+        const newWorkspace = await db.workspace.create({
+          data: {
+            name: `${user.name || user.email?.split("@")[0] || 'User'}'s Workspace`,
+            members: {
+              create: {
+                userId: user.id,
+                role: "ADMIN",
+              },
+            },
+            projects: {
+              create: {
+                name: "Default Project",
+                description: "Your first project",
+              },
+            },
+          },
+          include: { projects: true },
+        });
+        targetProjectId = newWorkspace.projects[0].id;
+      } else {
+        targetProjectId = workspaceMember.workspace.projects[0].id;
       }
-      targetProjectId = workspaceMember.workspace.projects[0].id;
     }
 
     // Create workflow and its first SPEC artifact draft in a transaction

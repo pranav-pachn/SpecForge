@@ -4,8 +4,28 @@ import { ArrowRight, Hammer, Layers, LayoutTemplate, ShieldCheck, Zap } from "lu
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen font-sans animate-in">
+      {/* Header */}
+      <header className="absolute top-0 inset-x-0 h-20 px-6 flex items-center justify-between z-50 max-w-7xl mx-auto w-full">
+        <Link href="/" className="flex items-center gap-2 font-bold text-xl group">
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-2 rounded-xl shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+            <Hammer className="h-5 w-5" />
+          </div>
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 tracking-tight">
+            SpecForge
+          </span>
+        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/login" className="text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors">
+            Log in
+          </Link>
+          <Link href="/signup" className="text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg transition-colors shadow-sm">
+            Sign up
+          </Link>
+        </div>
+      </header>
+
       {/* Hero Section */}
-      <section className="relative px-6 py-24 md:py-32 lg:py-40 overflow-hidden">
+      <section className="relative px-6 pt-32 pb-24 md:pt-40 md:pb-32 lg:pt-48 lg:pb-40 overflow-hidden">
         {/* Background Gradients */}
         <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-blue-50 to-transparent dark:from-blue-900/20 dark:to-transparent -z-10" />
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-purple-200 dark:bg-purple-900/20 rounded-full blur-3xl opacity-50 -z-10" />

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Zap, CheckCircle2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function ClarifyTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
+export default function ClarifyTab({ workflowId, onMutate, onRegenerateComplete }: { workflowId: string, onMutate?: () => void, onRegenerateComplete?: () => void }) {
   const router = useRouter();
   const [workflow, setWorkflow] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
@@ -13,6 +13,7 @@ export default function ClarifyTab({ workflowId, onMutate }: { workflowId: strin
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
   const [regeneratingSpec, setRegeneratingSpec] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -106,8 +107,11 @@ export default function ClarifyTab({ workflowId, onMutate }: { workflowId: strin
       await fetchData();
       router.refresh();
       onMutate?.();
-      // Optional: Navigate to spec tab automatically or show a success message
-      alert("Specification regenerated successfully. Check the Spec tab for the new version.");
+      
+      setSuccess(true);
+      setTimeout(() => {
+        onRegenerateComplete?.();
+      }, 1500);
     } catch (e) {
       console.error(e);
     } finally {
@@ -179,6 +183,16 @@ export default function ClarifyTab({ workflowId, onMutate }: { workflowId: strin
 
   return (
     <div className="space-y-6">
+      {success && (
+        <div className="bg-green-500/20 border border-green-500/50 text-green-100 px-6 py-4 rounded-xl flex items-center gap-3 shadow-[0_0_15px_rgba(34,197,94,0.3)] animate-in fade-in slide-in-from-top-4">
+          <CheckCircle2 className="w-5 h-5 text-green-400" />
+          <div className="flex-1">
+            <h4 className="font-bold">Spec Regenerated Successfully</h4>
+            <p className="text-sm opacity-90">Switching you back to the Spec tab to review changes...</p>
+          </div>
+        </div>
+      )}
+      
       <div className="glass rounded-2xl p-6 flex items-center justify-between sticky top-4 z-10 border-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
         <div>
           <h2 className="text-2xl font-extrabold mb-2 text-white">Clarifications</h2>
@@ -220,7 +234,7 @@ export default function ClarifyTab({ workflowId, onMutate }: { workflowId: strin
             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 border-b pb-2">{category}</h3>
             <div className="space-y-4">
               {catsQs.map(q => (
-                <div key={q.id} className={`border rounded-xl p-5 bg-white dark:bg-slate-950 shadow-sm transition-colors ${q.status !== 'OPEN' ? 'opacity-70 border-green-200 dark:border-green-900/30' : 'border-blue-100 dark:border-blue-900/30'}`}>
+                <div key={q.id} className={`border rounded-xl p-5 glass border-white/10 shadow-sm transition-colors ${q.status !== 'OPEN' ? 'opacity-70 border-green-200 dark:border-green-900/30' : 'border-blue-100 dark:border-blue-900/30'}`}>
                   <div className="flex justify-between items-start mb-4">
                     <p className="font-medium text-lg pr-8">{q.question}</p>
                     {q.status === "OPEN" && (
@@ -252,13 +266,13 @@ export default function ClarifyTab({ workflowId, onMutate }: { workflowId: strin
                       </button>
                     </div>
                   ) : (
-                    <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg">
+                    <div className="bg-white/5 p-4 rounded-lg">
                       <div className="flex items-center gap-2 mb-2">
                         <CheckCircle2 className={`w-4 h-4 ${q.status === 'DISMISSED' ? 'text-slate-400' : 'text-green-500'}`} />
                         <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{q.status}</span>
                       </div>
                       {q.answer?.answer && (
-                        <p className="text-sm text-slate-700 dark:text-slate-300">{q.answer.answer}</p>
+                        <p className="text-sm text-slate-300">{q.answer.answer}</p>
                       )}
                     </div>
                   )}

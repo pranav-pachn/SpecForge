@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
-import { aiConfig, generateTextWithGemini, MODEL_IDS } from "@/lib/ai/config";
-import { FULL_REVIEW_SYSTEM_PROMPT } from "@/lib/ai/review-prompts";
+import { gateway } from "@/lib/ai/gateway/gateway";
+import { PromptRegistry } from "@/lib/ai/prompts/registry";
 import { CheckStatus, ReviewCheckType } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
@@ -45,10 +45,11 @@ ${planContent}
 ${tasksData}
 `;
 
-    const { text } = await generateTextWithGemini(MODEL_IDS.FLASH, {
-      system: FULL_REVIEW_SYSTEM_PROMPT,
+    const { text } = await gateway.execute({
+      capability: "review",
+      system: PromptRegistry.review(),
       prompt,
-    });
+      });
 
     let result;
     try {

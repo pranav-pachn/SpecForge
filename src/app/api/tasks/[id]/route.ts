@@ -19,17 +19,11 @@ export async function PATCH(
     if (!task) return apiError("Task not found", 404);
     if (task.workflow.creatorId !== user.id) return apiError("Unauthorized", 401);
 
-    const { title, description, status, priority, order } = await req.json();
+    const data = await req.json();
 
     const updated = await db.task.update({
       where: { id: params.id },
-      data: {
-        ...(title !== undefined ? { title } : {}),
-        ...(description !== undefined ? { description } : {}),
-        ...(status ? { status: status as TaskStatus } : {}),
-        ...(priority !== undefined ? { priority } : {}),
-        ...(order !== undefined ? { order } : {}),
-      },
+      data,
     });
 
     return jsonResponse(updated);

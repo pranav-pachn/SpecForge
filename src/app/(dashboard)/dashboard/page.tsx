@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, ArrowRight, Hammer, CheckCircle2, AlertTriangle, Layers } from "lucide-react";
+import { Plus, ArrowRight, Hammer, CheckCircle2, AlertTriangle, Layers, Trash2 } from "lucide-react";
 import CreateWorkflowModal from "@/features/workflows/components/workflows/CreateWorkflowModal";
 import { WorkflowStatus } from "@prisma/client";
 import { WORKFLOW_STATUS_LABELS, WORKFLOW_STATUS_COLORS } from "@/lib/constants";
@@ -14,36 +14,51 @@ export default function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [stats, setStats] = useState({ total: 0, active: 0, completed: 0, stale: 0 });
 
-  useEffect(() => {
-    const fetchWorkflows = async () => {
-      try {
-        const res = await fetch("/api/workflows");
-        if (res.ok) {
-          const data = await res.json();
-          setWorkflows(data);
-          
-          // Calculate stats
-          const active = data.filter((w: any) => w.status !== 'COMPLETED' && w.status !== 'ARCHIVED').length;
-          const completed = data.filter((w: any) => w.status === 'COMPLETED').length;
-          const stale = data.filter((w: any) => w.artifacts?.some((a: any) => a.versions?.[0]?.status === "STALE")).length;
-          
-          setStats({ total: data.length, active, completed, stale });
-        }
-      } catch (err) {
-        console.error("Failed to load workflows");
-      } finally {
-        setLoading(false);
+  const fetchWorkflows = async () => {
+    try {
+      const res = await fetch("/api/workflows");
+      if (res.ok) {
+        const data = await res.json();
+        setWorkflows(data);
+        
+        // Calculate stats
+        const active = data.filter((w: any) => w.status !== 'COMPLETED' && w.status !== 'ARCHIVED').length;
+        const completed = data.filter((w: any) => w.status === 'COMPLETED').length;
+        const stale = data.filter((w: any) => w.artifacts?.some((a: any) => a.versions?.[0]?.status === "STALE")).length;
+        
+        setStats({ total: data.length, active, completed, stale });
       }
-    };
-    
+    } catch (err) {
+      console.error("Failed to load workflows");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     // Initial fetch
     fetchWorkflows();
     
     // In a real app we might use SWR or React Query, but we just re-fetch on focus for MVP
-    const onFocus = () => fetchWorkflows();
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    window.addEventListener("focus", fetchWorkflows);
+    return () => window.removeEventListener("focus", fetchWorkflows);
   }, []);
+
+  const handleDeleteWorkflow = async (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    if (!confirm("Are you sure you want to delete this workflow? This action cannot be undone.")) return;
+    
+    try {
+      const res = await fetch(`/api/workflows/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchWorkflows();
+      } else {
+        console.error("Failed to delete workflow");
+      }
+    } catch (err) {
+      console.error("Error deleting workflow", err);
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4 animate-in">
@@ -125,9 +140,18 @@ export default function DashboardPage() {
                 
                 <div className="flex justify-between items-start mb-6 gap-4">
                   <h3 className="font-extrabold text-xl leading-tight line-clamp-2 text-white group-hover:text-blue-100 transition-colors">{wf.name}</h3>
-                  <span className={`text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold whitespace-nowrap shadow-sm border ${WORKFLOW_STATUS_COLORS[wf.status as WorkflowStatus]} ${wf.status === 'COMPLETED' ? 'border-green-200 dark:border-green-800' : 'border-transparent'}`}>
-                    {WORKFLOW_STATUS_LABELS[wf.status as WorkflowStatus]}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold whitespace-nowrap shadow-sm border ${WORKFLOW_STATUS_COLORS[wf.status as WorkflowStatus]} ${wf.status === 'COMPLETED' ? 'border-green-200 dark:border-green-800' : 'border-transparent'}`}>
+                      {WORKFLOW_STATUS_LABELS[wf.status as WorkflowStatus]}
+                    </span>
+                    <button 
+                      onClick={(e) => handleDeleteWorkflow(e, wf.id)}
+                      className="p-1.5 rounded-md hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors shadow-sm"
+                      title="Delete Workflow"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="mb-8 flex items-center gap-3">

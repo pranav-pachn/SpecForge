@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
-import { aiConfig, generateTextWithGemini, MODEL_IDS } from "@/lib/ai/config";
-import { TASK_DECOMPOSITION_SYSTEM_PROMPT } from "@/lib/ai/task-prompts";
+import { gateway } from "@/lib/ai/gateway/gateway";
+import { PromptRegistry } from "@/lib/ai/prompts/registry";
 
 export async function POST(req: NextRequest) {
   const user = await getAuthenticatedUser();
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const { workflowId, planContent, planVersionId } = await req.json();
 
     if (!workflowId || !planContent || !planVersionId) {
-      return apiError("workflowId, planContent, and planVersionId are required", 400);
+      return apiError("Plan content is missing or empty. Please go back to the Plan tab and regenerate the plan.", 400);
     }
 
     // Verify workflow belongs to user
@@ -23,10 +23,11 @@ export async function POST(req: NextRequest) {
 
     const prompt = `Please decompose the following Implementation Plan into tasks:\n\n### Implementation Plan\n${planContent}`;
 
-    const { text } = await generateTextWithGemini(MODEL_IDS.FLASH, {
-      system: TASK_DECOMPOSITION_SYSTEM_PROMPT,
+    const { text } = await gateway.execute({
+      capability: "tasks",
+      system: PromptRegistry.tasks(),
       prompt,
-    });
+      });
 
     let result;
     try {
@@ -45,7 +46,9 @@ export async function POST(req: NextRequest) {
       // Clear old tasks for this workflow (if regenerating)
       await tx.task.deleteMany({ where: { workflowId } });
 
+      const tasksMap = new Map(); // to store title -> task for dependency mapping
       const tasks = [];
+
       for (const t of result.tasks) {
         const created = await tx.task.create({
           data: {
@@ -58,13 +61,32 @@ export async function POST(req: NextRequest) {
             priority: t.priority || 2,
             order: t.order || 0,
             status: "TODO",
+            complexity: t.complexity,
+            requirements: t.requirements || [],
           },
         });
+        tasksMap.set(t.title, created);
         tasks.push(created);
       }
 
-      // We don't advance the workflow state here yet, 
-      // the user will manually click "Continue to Execute" on the UI
+      // Second pass: wire up dependencies
+      for (const t of result.tasks) {
+        if (t.dependencies && t.dependencies.length > 0) {
+          const currentTask = tasksMap.get(t.title);
+          for (const depTitle of t.dependencies) {
+            const dependsOnTask = tasksMap.get(depTitle);
+            if (currentTask && dependsOnTask) {
+              await tx.taskDependency.create({
+                data: {
+                  taskId: currentTask.id,
+                  dependsOnId: dependsOnTask.id,
+                }
+              });
+            }
+          }
+        }
+      }
+
       return tasks;
     });
 

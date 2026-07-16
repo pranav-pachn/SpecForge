@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
-import { aiConfig, generateTextWithGemini, MODEL_IDS } from "@/lib/ai/config";
-import { CLARIFICATION_SYSTEM_PROMPT } from "@/lib/ai/clarification-prompts";
+import { gateway } from "@/lib/ai/gateway/gateway";
+import { PromptRegistry } from "@/lib/ai/prompts/registry";
 import { WorkflowStatus } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
@@ -17,8 +17,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Call LLM for clarification questions
-    const { text } = await generateTextWithGemini(MODEL_IDS.FLASH, {
-      system: CLARIFICATION_SYSTEM_PROMPT,
+    const { text } = await gateway.execute({
+      capability: "clarify",
+      system: PromptRegistry.clarify(),
       prompt: `Analyze this specification and generate clarification questions:\n\n${specContent}`,
     });
 

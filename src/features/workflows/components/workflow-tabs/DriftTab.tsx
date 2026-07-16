@@ -1,14 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Route, AlertCircle, CheckCircle2, FileText, ArrowRight } from "lucide-react";
+import { Loader2, Route } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+import DriftScoreHero from "@/features/workflows/components/drift/DriftScoreHero";
+import VersionDiffPanel from "@/features/workflows/components/drift/VersionDiffPanel";
+import ImpactGraphView from "@/features/workflows/components/drift/ImpactGraphView";
+import RegenerationDialog from "@/features/workflows/components/drift/RegenerationDialog";
 
 export default function DriftTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
   const router = useRouter();
-  const [events, setEvents] = useState<any[]>([]);
+  const [data, setData] = useState<{events: any[], analysis: any}>({ events: [], analysis: null });
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"ALL" | "UNRESOLVED">("UNRESOLVED");
+  
+  // Selection state for ImpactGraph
+  const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -19,8 +28,22 @@ export default function DriftTab({ workflowId, onMutate }: { workflowId: string,
     try {
       const res = await fetch(`/api/drift?workflowId=${workflowId}`);
       if (res.ok) {
-        const data = await res.json();
-        setEvents(data);
+        const json = await res.json();
+        setData(json);
+        
+        // Auto-select all stale nodes by default when data loads
+        if (json.analysis && json.analysis.impactData) {
+          try {
+            const graph = JSON.parse(json.analysis.impactData);
+            const staleIds: string[] = [];
+            const collect = (node: any) => {
+              if (node.status === "stale" && node.type !== "requirement") staleIds.push(node.id);
+              if (node.children) node.children.forEach(collect);
+            };
+            graph.roots.forEach(collect);
+            setSelectedNodes(staleIds);
+          } catch (e) {}
+        }
       }
     } catch (e) {
       console.error(e);
@@ -29,17 +52,30 @@ export default function DriftTab({ workflowId, onMutate }: { workflowId: string,
     }
   };
 
-  const handleResolve = async (id: string, resolved: boolean) => {
+  const toggleNode = (id: string) => {
+    setSelectedNodes(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleRegenerate = async () => {
+    if (!data.analysis) return;
+    setIsRegenerating(true);
+    
     try {
-      await fetch(`/api/drift/${id}`, {
-        method: "PATCH",
+      await fetch(`/api/drift/analysis/${data.analysis.id}/regenerate`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resolved }),
+        body: JSON.stringify({ selections: selectedNodes })
       });
-      setEvents(events.map(e => e.id === id ? { ...e, resolved } : e));
+      
+      await fetchData(); // Refresh data
       onMutate?.();
-    } catch (e) {
-      console.error(e);
+      setIsDialogOpen(false);
+    } catch (err) {
+      console.error("Regeneration failed", err);
+    } finally {
+      setIsRegenerating(false);
     }
   };
 
@@ -47,12 +83,11 @@ export default function DriftTab({ workflowId, onMutate }: { workflowId: string,
     return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>;
   }
 
-  const filteredEvents = filter === "UNRESOLVED" ? events.filter(e => !e.resolved) : events;
-  const unresolvedCount = events.filter(e => !e.resolved).length;
+  const { events, analysis } = data;
 
-  if (events.length === 0) {
+  if (!analysis && events.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-950 border rounded-xl p-12 text-center shadow-sm">
+      <div className="glass rounded-xl p-12 text-center animate-in shadow-[0_0_40px_rgba(0,0,0,0.3)] border-white/10">
         <Route className="w-12 h-12 text-slate-300 mx-auto mb-4" />
         <h3 className="text-xl font-bold mb-2">No Drift Detected</h3>
         <p className="text-slate-500 mb-6 max-w-lg mx-auto">
@@ -62,107 +97,56 @@ export default function DriftTab({ workflowId, onMutate }: { workflowId: string,
     );
   }
 
-  return (
-    <div className="bg-white dark:bg-slate-950 border rounded-xl shadow-sm overflow-hidden">
-      <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-5 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <Route className="w-6 h-6 text-purple-600" />
-            Drift Control Center
-          </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            {unresolvedCount > 0 
-              ? `${unresolvedCount} unresolved drift event${unresolvedCount > 1 ? 's' : ''} require your attention.`
-              : "All drift events resolved."}
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="flex items-center border rounded-md overflow-hidden bg-white dark:bg-slate-800">
-            <button
-              onClick={() => setFilter("UNRESOLVED")}
-              className={`px-3 py-1.5 text-sm font-medium transition-colors ${filter === "UNRESOLVED" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/50" : "text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
-            >
-              Unresolved
-            </button>
-            <button
-              onClick={() => setFilter("ALL")}
-              className={`px-3 py-1.5 text-sm font-medium border-l transition-colors ${filter === "ALL" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/50" : "text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
-            >
-              All Events
-            </button>
-          </div>
-        </div>
-      </div>
+  let diffs = [];
+  let graph = null;
+  
+  if (analysis) {
+    try {
+      if (analysis.diffData) diffs = JSON.parse(analysis.diffData);
+      if (analysis.impactData) graph = JSON.parse(analysis.impactData);
+    } catch (e) {
+      console.error("Failed to parse analysis JSON", e);
+    }
+  }
 
-      <div className="p-6">
-        <div className="space-y-4 max-w-4xl mx-auto">
-          {filteredEvents.map(event => (
-            <div key={event.id} className="border rounded-xl p-5 bg-white dark:bg-slate-900 flex gap-4 shadow-sm hover:shadow-md transition-shadow">
-              <div className="shrink-0 mt-1">
-                {event.resolved ? (
-                  <CheckCircle2 className="w-6 h-6 text-green-500" />
-                ) : (
-                  <AlertCircle className="w-6 h-6 text-purple-600" />
-                )}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <span className="uppercase text-xs font-black tracking-wider text-purple-600 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded">
-                        {event.entityType}
-                      </span>
-                      Drift Detected
-                    </h3>
-                    <p className="text-sm mt-2 text-slate-700 dark:text-slate-300">
-                      {event.description}
-                    </p>
-                  </div>
-                  <div className="shrink-0 ml-4">
-                    {event.resolved ? (
-                      <button 
-                        onClick={() => handleResolve(event.id, false)}
-                        className="text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
-                      >
-                        Re-open
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => handleResolve(event.id, true)}
-                        className="bg-purple-100 hover:bg-purple-200 text-purple-800 dark:bg-purple-900/50 dark:hover:bg-purple-900 dark:text-purple-300 text-sm font-medium px-4 py-2 rounded-md transition-colors"
-                      >
-                        Mark Resolved
-                      </button>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="mt-4 flex items-center gap-3 text-xs bg-slate-50 dark:bg-slate-950 p-3 rounded-lg border">
-                  <div className="flex flex-col">
-                    <span className="text-slate-500 font-medium mb-1">Source Update</span>
-                    <span className="font-mono bg-white dark:bg-slate-800 px-2 py-1 rounded border">
-                      {event.sourceVersion?.artifact?.title} (v{event.sourceVersion?.version})
-                    </span>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-slate-400" />
-                  <div className="flex flex-col">
-                    <span className="text-slate-500 font-medium mb-1">Impacted Artifact</span>
-                    <span className="font-mono bg-white dark:bg-slate-800 px-2 py-1 rounded border">
-                      {event.version?.artifact?.title} (v{event.version?.version})
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-          {filteredEvents.length === 0 && filter === "UNRESOLVED" && (
-            <div className="text-center p-8 text-slate-500">
-              No unresolved drift events.
-            </div>
-          )}
+  return (
+    <div className="glass rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.3)] border-white/10 overflow-hidden pb-8 relative animate-up" style={{ animationDelay: '100ms' }}>
+      <DriftScoreHero analysis={analysis} events={events} />
+      
+      {analysis && diffs.length > 0 && (
+        <VersionDiffPanel diffs={diffs} />
+      )}
+      
+      {analysis && graph && (
+        <ImpactGraphView 
+          graph={graph} 
+          selectedNodes={selectedNodes} 
+          onToggleNode={toggleNode} 
+        />
+      )}
+
+      {analysis && analysis.status !== "RESOLVED" && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 glass-panel text-white px-6 py-4 rounded-full flex items-center gap-6 animate-up">
+          <div className="text-sm font-medium">
+            <span className="font-bold text-purple-400">{selectedNodes.length}</span> artifacts selected for regeneration
+          </div>
+          <button 
+            onClick={() => setIsDialogOpen(true)}
+            disabled={selectedNodes.length === 0}
+            className="bg-purple-600 hover:bg-purple-500 px-5 py-2 rounded-full font-bold text-sm transition-colors disabled:opacity-50"
+          >
+            Review & Regenerate
+          </button>
         </div>
-      </div>
+      )}
+
+      <RegenerationDialog 
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        selectedCount={selectedNodes.length}
+        onConfirm={handleRegenerate}
+        isRegenerating={isRegenerating}
+      />
     </div>
   );
 }

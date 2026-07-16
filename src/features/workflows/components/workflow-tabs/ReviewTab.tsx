@@ -104,7 +104,7 @@ export default function ReviewTab({ workflowId, onMutate }: { workflowId: string
   // Prevent accessing review if spec not approved
   if (!isFullReviewMode && (!specVersion || specVersion.status !== "APPROVED")) {
     return (
-      <div className="bg-white dark:bg-slate-950 border rounded-xl p-12 text-center shadow-sm">
+      <div className="glass border-white/10 border rounded-xl p-12 text-center shadow-sm">
         <ShieldCheck className="w-12 h-12 text-slate-300 mx-auto mb-4" />
         <h3 className="text-xl font-bold mb-2">Spec Not Ready for Review</h3>
         <p className="text-slate-500 mb-6">You must approve the specification and resolve clarifications before reaching the Review Gate.</p>
@@ -149,7 +149,7 @@ export default function ReviewTab({ workflowId, onMutate }: { workflowId: string
 
   if (checks.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-950 border rounded-xl p-12 text-center shadow-sm">
+      <div className="glass border-white/10 border rounded-xl p-12 text-center shadow-sm">
         <ShieldCheck className="w-12 h-12 text-purple-500 mx-auto mb-4" />
         <h3 className="text-xl font-bold mb-2">
           {isFullReviewMode ? "Full Pipeline Review" : "Spec Review Gate"}
@@ -180,8 +180,8 @@ export default function ReviewTab({ workflowId, onMutate }: { workflowId: string
   const isShowingFullReview = checks.some(c => c.type === "CONSISTENCY" && c.description.startsWith("["));
 
   return (
-    <div className="bg-white dark:bg-slate-950 border rounded-xl shadow-sm overflow-hidden">
-      <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-5 flex items-center justify-between">
+    <div className="glass border-white/10 border rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white/5 border-b px-6 py-5 flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
             <ShieldCheck className="w-6 h-6 text-purple-500" />
@@ -198,7 +198,7 @@ export default function ReviewTab({ workflowId, onMutate }: { workflowId: string
           <button
             onClick={isFullReviewMode ? handleAnalyzeFull : handleAnalyze}
             disabled={analyzing}
-            className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-slate-600 glass border-white/20 rounded-md hover:bg-white/10 text-white disabled:opacity-50 flex items-center gap-2"
           >
             {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Re-run Checks"}
           </button>

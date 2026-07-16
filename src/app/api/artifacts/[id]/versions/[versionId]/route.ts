@@ -20,7 +20,7 @@ export async function GET(
         tasks: true,
         executionPacks: true,
         reviewChecks: true,
-        validationChecks: true,
+        validationReports: true,
       },
     });
 
