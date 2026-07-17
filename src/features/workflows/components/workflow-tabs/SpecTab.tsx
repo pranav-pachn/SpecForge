@@ -3,6 +3,7 @@
 import { useState } from "react";
 import ArtifactPanel from "@/features/specs/components/ArtifactPanel";
 import { useRouter } from "next/navigation";
+import { useAutosave } from "@/hooks/useAutosave";
 
 export default function SpecTab({ artifact, workflowId, onMutate }: { artifact?: any, workflowId: string, onMutate?: () => void }) {
   const router = useRouter();
@@ -11,6 +12,12 @@ export default function SpecTab({ artifact, workflowId, onMutate }: { artifact?:
   const [content, setContent] = useState(version?.content || "");
   const [isEditing, setIsEditing] = useState(!version?.content);
   const [isLoading, setIsLoading] = useState(false);
+
+  useAutosave(content, async () => {
+    if (isEditing && version?.content !== content) {
+      await handleSaveDraft();
+    }
+  }, 3000, isEditing);
 
   // Check how many of the 12 sections are present
   const sectionKeywords = [

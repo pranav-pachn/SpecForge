@@ -5,6 +5,8 @@ import { Loader2, ShieldCheck, ArrowRight, Activity, RefreshCw, Wand2 } from "lu
 import { useRouter } from "next/navigation";
 import EngineeringScoreHero from "../review/EngineeringScoreHero";
 import EngineeringCategoryCard from "../review/EngineeringCategoryCard";
+import EngineeringFindingRow from "@/features/workflows/components/review/EngineeringFindingRow";
+import { SkeletonTable } from "@/components/ui/Skeleton";
 
 export default function EngineeringReviewTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
   const router = useRouter();
@@ -60,7 +62,7 @@ export default function EngineeringReviewTab({ workflowId, onMutate }: { workflo
       await fetch(`/api/workflows/${workflowId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "VALIDATING" }),
+        body: JSON.stringify({ status: "REVIEWING" }),
       });
       router.refresh();
       onMutate?.();
@@ -73,9 +75,8 @@ export default function EngineeringReviewTab({ workflowId, onMutate }: { workflo
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center p-20 gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-        <p className="text-sm text-slate-500 animate-pulse">Loading engineering review...</p>
+      <div className="p-6">
+        <SkeletonTable rows={4} />
       </div>
     );
   }

@@ -5,6 +5,9 @@ import { Loader2, Terminal, ArrowRight, ServerCrash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ToolName } from "@prisma/client";
 import ExecutionPackCard from "@/features/workflows/components/workflows/ExecutionPackCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SkeletonCard } from "@/components/ui/Skeleton";
+import { toast } from "sonner";
 
 export default function ExecuteTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
   const router = useRouter();
@@ -52,7 +55,7 @@ export default function ExecuteTab({ workflowId, onMutate }: { workflowId: strin
   const handleGenerate = async (taskId: string) => {
     setGeneratingId(taskId);
     try {
-      await fetch("/api/ai/execution-pack", {
+      const generatePromise = fetch("/api/ai/execution-pack", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -62,6 +65,14 @@ export default function ExecuteTab({ workflowId, onMutate }: { workflowId: strin
           planContent,
         }),
       });
+
+      toast.promise(generatePromise, {
+        loading: "Generating execution pack...",
+        success: "Execution pack generated!",
+        error: "Failed to generate execution pack"
+      });
+
+      await generatePromise;
       await fetchData();
     } catch (e) {
       console.error(e);
@@ -73,7 +84,7 @@ export default function ExecuteTab({ workflowId, onMutate }: { workflowId: strin
   const handleGenerateAll = async () => {
     setGeneratingAll(true);
     try {
-      await fetch("/api/ai/execution-pack/batch", {
+      const batchPromise = fetch("/api/ai/execution-pack/batch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -83,6 +94,14 @@ export default function ExecuteTab({ workflowId, onMutate }: { workflowId: strin
           planContent,
         }),
       });
+
+      toast.promise(batchPromise, {
+        loading: "Generating all execution packs...",
+        success: "All packs generated!",
+        error: "Failed to generate all packs"
+      });
+
+      await batchPromise;
       await fetchData();
     } catch (e) {
       console.error(e);
@@ -106,16 +125,22 @@ export default function ExecuteTab({ workflowId, onMutate }: { workflowId: strin
   };
 
   if (loading) {
-    return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>;
+    return (
+      <div className="space-y-6 max-w-4xl mx-auto p-6">
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
+    );
   }
 
   if (tasks.length === 0) {
     return (
-      <div className="glass border-white/10 border rounded-xl p-12 text-center shadow-sm">
-        <ServerCrash className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-        <h3 className="text-xl font-bold mb-2">No Tasks Available</h3>
-        <p className="text-slate-500 mb-6">You must break down tasks before generating execution packs.</p>
-      </div>
+      <EmptyState
+        icon={<ServerCrash className="w-8 h-8" />}
+        title="No Tasks Available"
+        description="You must break down tasks before generating execution packs."
+      />
     );
   }
 

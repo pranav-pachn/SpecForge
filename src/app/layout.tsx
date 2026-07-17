@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import "@/app/globals.css";
+import { Providers } from "@/components/providers";
 
 const outfit = Outfit({ subsets: ["latin"] });
 
@@ -22,10 +23,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`dark ${outfit.className}`}>
-      <body className="min-h-screen bg-[#05050a] text-slate-200 antialiased selection:bg-blue-500/30 selection:text-blue-200">
-        <div className="fixed inset-0 z-[-1] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#05050a] to-[#05050a]" />
-        {children}
+    <html lang="en" suppressHydrationWarning className={outfit.className}>
+      <body className="min-h-screen bg-background text-foreground antialiased selection:bg-blue-500/30 selection:text-blue-200 transition-colors duration-200">
+        <Providers>
+          <div className="fixed inset-0 z-[-1] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/10 via-background to-background dark:from-indigo-900/20" />
+          {children}
+        </Providers>
       </body>
     </html>
   );

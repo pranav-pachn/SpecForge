@@ -19,9 +19,17 @@ export const authConfig: NextAuthConfig = {
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        isDemo: { label: "Demo", type: "text" }
       },
       async authorize(credentials) {
+        if (credentials?.isDemo === "true" && credentials?.email === "demo@specforge.dev") {
+          const demoUser = await db.user.findUnique({ where: { email: "demo@specforge.dev" } });
+          if (demoUser) {
+            return { id: demoUser.id, email: demoUser.email, name: demoUser.name };
+          }
+        }
+
         if (!credentials?.email || !credentials?.password) {
           return null;
         }

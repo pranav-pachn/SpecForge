@@ -1,91 +1,98 @@
-# 🔨 SpecForge
+# SpecForge
 
-> **Stop coding in the dark.** The spec-to-execution workflow OS for AI-assisted software development.
+**SpecForge** is an AI-powered SaaS application designed for technical leads, product managers, and engineering teams. It transforms unstructured ideas and conversations into comprehensive software specifications, implementation plans, actionable tasks, and production-ready execution code.
 
-SpecForge is an open-source workflow tool designed specifically for developers building software with AI coding agents like Cursor, Windsurf, or Copilot. 
+Built with **Next.js 14**, **Prisma**, **Tailwind CSS**, and the **Vercel AI SDK**, SpecForge acts as an intelligent engineering companion that shepherds a feature from inception to deployment while preventing specification drift.
 
-LLMs are incredible at writing code, but terrible at figuring out *what* to build. SpecForge forces you to clarify your intent before the AI starts typing. It turns messy ideas into structured specs, decomposes them into technical plans, and generates highly contextualized "Execution Packs" ready for handoff.
+## ✨ Key Features
 
-## 🌟 Why SpecForge?
-
-The hardest part of AI-assisted coding isn't generating the code—it's managing the context. Without a solid specification and a step-by-step plan, AI agents hallucinate, lose track of requirements, and build the wrong thing.
-
-SpecForge solves this by providing a pipeline:
-1. **Specification Intake**: Dump raw ideas. We use an LLM to organize them into a clean PRD.
-2. **Clarification**: Get asked targeted questions to resolve ambiguities before coding begins.
-3. **Decomposition**: Turn the spec into an architecture plan and a sequenced list of execution tasks.
-4. **Execution Handoff**: Export an "Execution Pack" for your AI agent that contains just the right amount of context for a specific task.
-5. **Drift Detection**: If you change the spec later, SpecForge automatically flags the tasks and plans that are now stale.
-
-## 🚀 Features
-
-- **Hybrid Intake:** One large text area for raw thoughts, plus structured fields for goals and constraints.
-- **Spec & Plan Generation:** Automated AI generation of detailed PRDs and implementation plans.
-- **Task Breakdown:** Decompose plans into granular tasks with dependencies and acceptance criteria.
-- **Execution Packs:** Generate optimized prompts for Cursor/Windsurf that include exact requirements and context.
-- **Version Control & Drift Tracking:** Keep artifacts in sync. Know exactly what parts of your plan are stale when requirements change.
-- **Beautiful UI:** A modern, premium interface built with Next.js App Router and TailwindCSS.
+1. **AI Specification Generator**: Instantly drafts technical specs from natural language inputs, breaking them down into Goals, Non-goals, Target Users, and more.
+2. **Implementation Planning**: Generates step-by-step architectural plans based on the approved specification.
+3. **Task Breakdown**: Converts plans into structured sub-tasks with clear acceptance criteria and dependencies.
+4. **Code Execution Packs**: Generates prompt bundles and initial code scaffolds tailored for specific AI developer tools (Cursor, Claude Code, Windsurf).
+5. **Engineering Review & Validation**: Automatically reviews your specifications for requirement coverage, edge cases, security, and architectural soundness.
+6. **Drift Detection**: Tracks changes to the specification over time and identifies potential downstream impact on tasks and code.
 
 ## 🛠️ Tech Stack
 
-- **Framework:** Next.js 14 (App Router)
-- **Styling:** TailwindCSS + Lucide Icons
-- **Database:** PostgreSQL + Prisma ORM
-- **AI Integration:** Vercel AI SDK + OpenAI
-- **Authentication:** Auth.js (NextAuth v5) + Credentials
+- **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
+- **Database**: PostgreSQL (via [Prisma ORM](https://www.prisma.io/))
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Authentication**: [NextAuth.js v5](https://next-auth.js.org/)
+- **AI Integration**: [Vercel AI SDK](https://sdk.vercel.ai/docs)
+- **UI Components**: custom components powered by Lucide icons, Framer Motion, and CMDK.
 
-## 🏁 Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- PostgreSQL database (e.g., Neon, Supabase, or local Docker)
-- OpenAI API Key
+
+- Node.js (v18+)
+- A PostgreSQL database (e.g., local, Supabase, Neon)
+- An OpenAI API Key (or other compatible LLM provider configured in Vercel AI SDK)
+- A Google OAuth Client (for Google sign-in)
 
 ### Installation
 
-1. **Clone the repository**
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/pranav-pachn/SpecForge.git
    cd SpecForge
    ```
 
-2. **Install dependencies**
+2. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. **Set up environment variables**
-   Create a `.env` file in the root directory:
+3. **Environment Setup:**
+   Create a `.env` file in the root directory and add the following variables:
    ```env
    DATABASE_URL="postgresql://user:password@localhost:5432/specforge"
    NEXTAUTH_URL="http://localhost:3000"
-   NEXTAUTH_SECRET="your-secret-key"
-   OPENAI_API_KEY="sk-..."
+   NEXTAUTH_SECRET="your-secret-here"
+   GOOGLE_CLIENT_ID="your-google-client-id"
+   GOOGLE_CLIENT_SECRET="your-google-client-secret"
+   OPENAI_API_KEY="your-openai-api-key"
    ```
 
-4. **Initialize database**
+4. **Initialize Database:**
    ```bash
+   npx prisma generate
    npx prisma db push
    ```
 
-5. **Seed the demo data**
-   ```bash
-   npm run seed:demo
-   ```
-
-6. **Start the development server**
+5. **Start the Development Server:**
    ```bash
    npm run dev
    ```
 
-7. **Log in to the Demo Account**
-   - **Email:** demo@specforge.com
-   - **Password:** password123
+   Visit [http://localhost:3000](http://localhost:3000) to view the application.
 
-## 🤝 Contributing
+## 🎮 Demo Mode
 
-Contributions are welcome! Please open an issue or submit a pull request if you'd like to help improve SpecForge.
+Want to test the platform without setting up a real account? 
+SpecForge includes a built-in demo seeder.
+
+Navigate to `http://localhost:3000/login?demo=true` to automatically provision a demo account (`demo@specforge.dev`), workspace, and sample project, then log in instantly.
+
+## 📁 Project Structure
+
+```
+src/
+├── app/                  # Next.js App Router pages and layouts
+│   ├── (auth)/           # Authentication pages (login, signup)
+│   ├── (dashboard)/      # Protected dashboard and workflow routes
+│   └── api/              # API routes (AI generation, analytics, search)
+├── components/           # Reusable UI components (Skeletons, CommandPalette, etc.)
+├── features/             # Feature-based modular architecture
+│   ├── specs/            # Specification artifacts and editors
+│   └── workflows/        # Core workflow engine and tabs
+├── lib/                  # Shared utilities (Prisma client, Auth config, AI config)
+└── config/               # Platform configuration and feature flags
+prisma/
+└── schema.prisma         # Database schema
+```
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.

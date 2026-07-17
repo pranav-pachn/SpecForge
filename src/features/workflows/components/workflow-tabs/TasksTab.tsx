@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { Loader2, ListTodo, Plus, ArrowRight, Split } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TaskCard from "@/features/workflows/components/workflows/TaskCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SkeletonCard } from "@/components/ui/Skeleton";
+import { toast } from "sonner";
 
 export default function TasksTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
   const router = useRouter();
@@ -44,7 +47,7 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
 
       if (!planVersion) return;
 
-      await fetch("/api/ai/tasks", {
+      const generatePromise = fetch("/api/ai/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -53,6 +56,14 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
           planVersionId: planVersion.id,
         }),
       });
+
+      toast.promise(generatePromise, {
+        loading: "Generating tasks...",
+        success: "Tasks generated successfully!",
+        error: "Failed to generate tasks"
+      });
+
+      await generatePromise;
       await fetchData();
       onMutate?.();
     } catch (e) {
@@ -95,7 +106,7 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
     if (!taskToSplitId) return;
     setGenerating(true);
     try {
-      const res = await fetch(`/api/ai/tasks/split`, {
+      const splitPromise = fetch(`/api/ai/tasks/split`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -104,6 +115,14 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
           count: splitCount
         }),
       });
+
+      toast.promise(splitPromise, {
+        loading: "Splitting task...",
+        success: "Task split successfully!",
+        error: "Failed to split task"
+      });
+
+      const res = await splitPromise;
       if (res.ok) {
         await fetchData();
         setIsSplitModalOpen(false);
@@ -195,7 +214,13 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
   };
 
   if (loading) {
-    return <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>;
+    return (
+      <div className="space-y-4 max-w-4xl mx-auto p-6">
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
+    );
   }
 
   const plan = workflow?.artifacts?.find((a: any) => a.type === "PLAN");
@@ -203,31 +228,37 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
 
   if (!planVersion || planVersion.status !== "APPROVED") {
     return (
-      <div className="glass border-white/10 border rounded-xl p-12 text-center shadow-sm">
-        <ListTodo className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-        <h3 className="text-xl font-bold mb-2">Plan Not Approved</h3>
-        <p className="text-slate-500 mb-6">You must generate and approve the Implementation Plan before breaking down tasks.</p>
-      </div>
+      <EmptyState
+        icon={<ListTodo className="w-8 h-8" />}
+        title="Plan Not Approved"
+        description="You must generate and approve the Implementation Plan before breaking down tasks."
+      />
     );
   }
 
   if (tasks.length === 0) {
+    if (generating) {
+      return (
+        <div className="space-y-4 max-w-4xl mx-auto p-6 animate-pulse">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      );
+    }
+
     return (
-      <div className="glass border-white/10 border rounded-xl p-12 text-center shadow-sm">
-        <ListTodo className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-        <h3 className="text-xl font-bold mb-2">Task Breakdown</h3>
-        <p className="text-slate-500 mb-6 max-w-lg mx-auto">
-          Generate an actionable, sequential list of development tasks based on the approved implementation plan.
-        </p>
-        <button
-          onClick={handleGenerate}
-          disabled={generating}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-md font-medium inline-flex items-center gap-2 transition-colors"
-        >
-          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListTodo className="w-4 h-4" />}
-          Generate Tasks
-        </button>
-      </div>
+      <EmptyState
+        icon={<ListTodo className="w-8 h-8 text-blue-500" />}
+        title="Task Breakdown"
+        description="Generate an actionable, sequential list of development tasks based on the approved implementation plan."
+        action={{
+          label: "Generate Tasks",
+          onClick: handleGenerate,
+          loading: generating,
+          disabled: generating
+        }}
+      />
     );
   }
 

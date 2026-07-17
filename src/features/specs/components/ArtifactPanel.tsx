@@ -5,6 +5,9 @@ import { Loader2, RefreshCw, CheckCircle2, Save, FileText, Sparkles, LayoutTempl
 import { useEffect, useState } from "react";
 import MonacoMarkdownEditor from "@/features/specs/components/editors/MonacoMarkdownEditor";
 import { formatDistanceToNow } from "date-fns";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SkeletonText } from "@/components/ui/Skeleton";
+import { ExportMenu } from "@/components/ui/ExportMenu";
 
 interface ArtifactPanelProps {
   title: string;
@@ -145,6 +148,14 @@ export default function ArtifactPanel({
         </div>
 
         <div className="flex items-center gap-2">
+          {content && !isEditing && (
+            <ExportMenu 
+              content={content} 
+              filename={title.replace(/\s+/g, '-').toLowerCase()} 
+              elementId="artifact-export-content" 
+            />
+          )}
+          
           {onToggleEdit && (
             <button
               onClick={onToggleEdit}
@@ -194,24 +205,30 @@ export default function ArtifactPanel({
         {/* Main Content Area */}
         <div className="flex-1 p-0 overflow-y-auto bg-transparent relative">
           {!content && !isEditing ? (
-            <div className="flex flex-col items-center justify-center h-full text-slate-400 p-8 animate-in">
-              <div className="w-24 h-24 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full flex items-center justify-center mb-8 border border-white/5 shadow-[inset_0_0_30px_rgba(139,92,246,0.1)]">
-                <Sparkles className="w-12 h-12 text-blue-400 animate-pulse drop-shadow-[0_0_15px_rgba(96,165,250,0.5)]" />
+            isLoading ? (
+              <div className="p-8 h-full space-y-8 max-w-[800px] mx-auto animate-in">
+                <SkeletonText lines={1} className="w-1/3 mb-8 h-8" />
+                <SkeletonText lines={4} />
+                <SkeletonText lines={3} />
+                <SkeletonText lines={5} />
               </div>
-              <h3 className="text-2xl font-extrabold text-white mb-3 tracking-tight">Ready to Forge</h3>
-              <p className="text-md text-slate-400 mb-8 max-w-sm text-center leading-relaxed">{emptyStateMessage}</p>
-              {onRegenerate && (
-                <button
-                  onClick={onRegenerate}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold flex items-center gap-2 shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] transition-all duration-300 hover:-translate-y-0.5"
-                >
-                  <RefreshCw className="w-5 h-5" /> Generate AI Draft
-                </button>
-              )}
-            </div>
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <EmptyState
+                  icon={<Sparkles className="w-8 h-8" />}
+                  title="Ready to Forge"
+                  description={emptyStateMessage}
+                  action={onRegenerate ? {
+                    label: "Generate AI Draft",
+                    onClick: onRegenerate,
+                    disabled: isLoading
+                  } : undefined}
+                />
+              </div>
+            )
           ) : showDiff && !isEditing ? (
-            <div className="p-8 animate-in">
-              <div className="mb-4 flex items-center justify-between">
+            <div className="p-8 animate-in" id="artifact-export-content">
+              <div className="mb-4 flex items-center justify-between" data-html2canvas-ignore>
                 <h3 className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                   <FileText className="w-4 h-4" /> Changes since last version
                 </h3>
@@ -229,14 +246,14 @@ export default function ArtifactPanel({
                   readOnly={false}
                 />
               </div>
-              <div className="w-1/2 h-full overflow-y-auto bg-transparent p-8">
-                <article className="prose prose-sm lg:prose-base max-w-none text-slate-300 prose-headings:text-white prose-headings:font-bold prose-headings:tracking-tight prose-a:text-blue-400 prose-img:rounded-xl">
+              <div className="w-1/2 h-full overflow-y-auto bg-white dark:bg-[#05050a] p-8" id="artifact-export-content">
+                <article className="prose prose-sm lg:prose-base max-w-none text-slate-800 dark:text-slate-300 prose-headings:text-slate-900 dark:prose-headings:text-white prose-headings:font-bold prose-headings:tracking-tight prose-a:text-blue-500 prose-img:rounded-xl">
                   <ReactMarkdown>{content}</ReactMarkdown>
                 </article>
               </div>
             </div>
           ) : (
-            <div className="p-8 animate-in h-full overflow-y-auto">
+            <div className="p-8 animate-in h-full overflow-y-auto bg-white dark:bg-transparent" id="artifact-export-content">
               <article className="prose prose-lg prose-slate max-w-[800px] mx-auto dark:prose-invert prose-headings:font-bold prose-headings:tracking-tight prose-a:text-blue-600 prose-img:rounded-xl">
                 <ReactMarkdown>{content}</ReactMarkdown>
               </article>

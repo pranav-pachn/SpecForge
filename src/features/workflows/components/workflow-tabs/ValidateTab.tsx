@@ -57,10 +57,11 @@ export default function ValidateTab({ workflowId, onMutate }: { workflowId: stri
     if (report?.overallScore < 80) return;
     setCompleting(true);
     try {
+      const nextStatus = workflow?.status === "COMPLETED" ? "ARCHIVED" : "COMPLETED";
       await fetch(`/api/workflows/${workflowId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "COMPLETED" }),
+        body: JSON.stringify({ status: nextStatus }),
       });
       router.refresh();
       onMutate?.();
@@ -166,19 +167,29 @@ export default function ValidateTab({ workflowId, onMutate }: { workflowId: stri
           </button>
 
           <div className="relative group">
-            <button
-              onClick={handleComplete}
-              disabled={completing || !isReady}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 disabled:shadow-none transition-all active:scale-95"
-            >
-              {completing ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
+            {workflow?.status !== 'ARCHIVED' && (
+              <button
+                onClick={handleComplete}
+                disabled={completing || !isReady}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 disabled:shadow-none transition-all active:scale-95"
+              >
+                {completing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ShieldCheck className="w-4 h-4" />
+                )}
+                {completing 
+                  ? (workflow?.status === 'COMPLETED' ? 'Archiving...' : 'Completing...') 
+                  : (workflow?.status === 'COMPLETED' ? 'Archive Workflow' : 'Complete Workflow')}
+                {!completing && <ArrowRight className="w-4 h-4" />}
+              </button>
+            )}
+            {workflow?.status === 'ARCHIVED' && (
+              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-slate-400 bg-slate-800 border border-slate-700 shadow-none cursor-not-allowed">
                 <ShieldCheck className="w-4 h-4" />
-              )}
-              {completing ? 'Completing...' : 'Complete Workflow'}
-              {!completing && <ArrowRight className="w-4 h-4" />}
-            </button>
+                Workflow Archived
+              </div>
+            )}
 
             {!isReady && !completing && (
               <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl z-10">

@@ -92,7 +92,7 @@ export default function WorkflowPage() {
       </Link>
 
       {unresolvedDrift && activeTab !== "drift" && (
-        <div className="mb-6 glass-panel border-orange-500/30 bg-orange-950/20 rounded-xl p-4 flex items-center justify-between shadow-[0_0_20px_rgba(249,115,22,0.15)] animate-in">
+        <div className="mb-6 glass-panel border-orange-500/30 bg-orange-950/20 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-[0_0_20px_rgba(249,115,22,0.15)] animate-in">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 border border-orange-500/30">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>

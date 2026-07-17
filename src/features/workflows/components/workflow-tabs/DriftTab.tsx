@@ -128,14 +128,17 @@ export default function DriftTab({ workflowId, onMutate }: { workflowId: string,
       {analysis && analysis.status !== "RESOLVED" && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 glass-panel text-white px-6 py-4 rounded-full flex items-center gap-6 animate-up">
           <div className="text-sm font-medium">
-            <span className="font-bold text-purple-400">{selectedNodes.length}</span> artifacts selected for regeneration
+            {selectedNodes.length > 0 ? (
+              <><span className="font-bold text-purple-400">{selectedNodes.length}</span> artifacts selected for regeneration</>
+            ) : (
+              <span className="text-slate-400">No artifacts selected for regeneration</span>
+            )}
           </div>
           <button 
-            onClick={() => setIsDialogOpen(true)}
-            disabled={selectedNodes.length === 0}
-            className="bg-purple-600 hover:bg-purple-500 px-5 py-2 rounded-full font-bold text-sm transition-colors disabled:opacity-50"
+            onClick={() => selectedNodes.length === 0 ? handleRegenerate() : setIsDialogOpen(true)}
+            className="bg-purple-600 hover:bg-purple-500 px-5 py-2 rounded-full font-bold text-sm transition-colors"
           >
-            Review & Regenerate
+            {selectedNodes.length > 0 ? "Review & Regenerate" : "Acknowledge Drift"}
           </button>
         </div>
       )}

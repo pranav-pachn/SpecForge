@@ -1,17 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { LogIn, Loader2, Mail, Key } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams?.get("demo") === "true") {
+      handleDemoLogin();
+    }
+  }, [searchParams]);
+
+  const handleDemoLogin = async () => {
+    setDemoLoading(true);
+    try {
+      await fetch("/api/seed", { method: "POST" });
+      await signIn("credentials", {
+        email: "demo@specforge.dev",
+        isDemo: "true",
+        password: "any",
+        callbackUrl: "/dashboard",
+      });
+    } catch (e) {
+      console.error(e);
+      setDemoLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,6 +148,15 @@ export default function LoginPage() {
               <path d="M1 1h22v22H1z" fill="none" />
             </svg>
             Sign in with Google
+          </button>
+          
+          <button
+            onClick={handleDemoLogin}
+            disabled={demoLoading}
+            className="w-full mt-3 flex items-center justify-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-2.5 rounded-lg hover:bg-slate-800 dark:hover:bg-slate-100 focus:ring-4 focus:ring-slate-500/20 transition-all shadow-sm font-medium disabled:opacity-70"
+          >
+            {demoLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <div className="w-5 h-5 rounded bg-gradient-to-br from-purple-500 to-blue-500" />}
+            {demoLoading ? "Preparing Demo..." : "Try Demo Account"}
           </button>
         </div>
       </div>

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import ArtifactPanel from "@/features/specs/components/ArtifactPanel";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useAutosave } from "@/hooks/useAutosave";
 
 export default function PlanTab({ 
   workflowId, 
@@ -23,6 +25,12 @@ export default function PlanTab({
   const [isEditing, setIsEditing] = useState(!!planArtifact && !version?.content);
   const [isLoading, setIsLoading] = useState(false);
 
+  useAutosave(content, async () => {
+    if (isEditing && version?.content !== content) {
+      await handleSaveDraft();
+    }
+  }, 3000, isEditing);
+
   const handleGenerate = async () => {
     setIsLoading(true);
     try {
@@ -33,7 +41,7 @@ export default function PlanTab({
         .filter((c: any) => c.status === "ANSWERED")
         .map((c: any) => ({ question: c.question, answer: c.answer?.answer }));
 
-      const res = await fetch(`/api/ai/plan`, {
+      const generatePromise = fetch(`/api/ai/plan`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -42,6 +50,14 @@ export default function PlanTab({
           clarifications: answeredClarifications
         }),
       });
+      
+      toast.promise(generatePromise, {
+        loading: "Generating implementation plan...",
+        success: "Plan generated successfully!",
+        error: "Failed to generate plan"
+      });
+
+      const res = await generatePromise;
       const data = await res.json();
       if (res.ok && data.content) {
         setContent(data.content);

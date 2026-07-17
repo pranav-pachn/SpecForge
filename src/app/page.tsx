@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Hammer, Layers, LayoutTemplate, ShieldCheck, Zap } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export default function Home() {
   return (
@@ -15,6 +16,7 @@ export default function Home() {
           </span>
         </Link>
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <Link href="/login" className="text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors">
             Log in
           </Link>

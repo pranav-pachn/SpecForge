@@ -62,12 +62,12 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4 animate-in">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-4xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-slate-200 to-slate-500 mb-2">
+          <h1 className="text-4xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-slate-900 via-slate-700 to-slate-500 dark:from-white dark:via-slate-200 dark:to-slate-500 mb-2">
             Active Workflows
           </h1>
-          <p className="text-slate-400 font-medium">Manage your feature delivery pipelines.</p>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">Manage your feature delivery pipelines.</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
@@ -81,21 +81,21 @@ export default function DashboardPage() {
       {/* Stats Bar */}
       {!loading && workflows.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 animate-up">
-          <div className="glass rounded-2xl p-5 flex items-center gap-4 hover:bg-white/10 transition-colors">
-            <div className="p-3.5 bg-blue-500/20 text-blue-400 rounded-xl shadow-[inset_0_0_20px_rgba(59,130,246,0.2)]"><Layers className="w-6 h-6" /></div>
-            <div><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total</p><p className="text-3xl font-extrabold text-white">{stats.total}</p></div>
+          <div className="glass rounded-2xl p-5 flex items-center gap-4 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+            <div className="p-3.5 bg-blue-500/20 text-blue-500 dark:text-blue-400 rounded-xl shadow-[inset_0_0_20px_rgba(59,130,246,0.2)]"><Layers className="w-6 h-6" /></div>
+            <div><p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total</p><p className="text-3xl font-extrabold text-slate-900 dark:text-white">{stats.total}</p></div>
           </div>
-          <div className="glass rounded-2xl p-5 flex items-center gap-4 hover:bg-white/10 transition-colors">
-            <div className="p-3.5 bg-indigo-500/20 text-indigo-400 rounded-xl shadow-[inset_0_0_20px_rgba(99,102,241,0.2)]"><Hammer className="w-6 h-6" /></div>
-            <div><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Active</p><p className="text-3xl font-extrabold text-white">{stats.active}</p></div>
+          <div className="glass rounded-2xl p-5 flex items-center gap-4 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+            <div className="p-3.5 bg-indigo-500/20 text-indigo-500 dark:text-indigo-400 rounded-xl shadow-[inset_0_0_20px_rgba(99,102,241,0.2)]"><Hammer className="w-6 h-6" /></div>
+            <div><p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Active</p><p className="text-3xl font-extrabold text-slate-900 dark:text-white">{stats.active}</p></div>
           </div>
-          <div className="glass rounded-2xl p-5 flex items-center gap-4 hover:bg-white/10 transition-colors">
-            <div className="p-3.5 bg-green-500/20 text-green-400 rounded-xl shadow-[inset_0_0_20px_rgba(34,197,94,0.2)]"><CheckCircle2 className="w-6 h-6" /></div>
-            <div><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Completed</p><p className="text-3xl font-extrabold text-white">{stats.completed}</p></div>
+          <div className="glass rounded-2xl p-5 flex items-center gap-4 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+            <div className="p-3.5 bg-green-500/20 text-green-500 dark:text-green-400 rounded-xl shadow-[inset_0_0_20px_rgba(34,197,94,0.2)]"><CheckCircle2 className="w-6 h-6" /></div>
+            <div><p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Completed</p><p className="text-3xl font-extrabold text-slate-900 dark:text-white">{stats.completed}</p></div>
           </div>
-          <div className="glass rounded-2xl p-5 flex items-center gap-4 hover:bg-white/10 transition-colors">
-            <div className="p-3.5 bg-orange-500/20 text-orange-400 rounded-xl shadow-[inset_0_0_20px_rgba(249,115,22,0.2)]"><AlertTriangle className="w-6 h-6" /></div>
-            <div><p className="text-xs font-bold uppercase tracking-wider text-slate-400">Drifted</p><p className="text-3xl font-extrabold text-white">{stats.stale}</p></div>
+          <div className="glass rounded-2xl p-5 flex items-center gap-4 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+            <div className="p-3.5 bg-orange-500/20 text-orange-500 dark:text-orange-400 rounded-xl shadow-[inset_0_0_20px_rgba(249,115,22,0.2)]"><AlertTriangle className="w-6 h-6" /></div>
+            <div><p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Drifted</p><p className="text-3xl font-extrabold text-slate-900 dark:text-white">{stats.stale}</p></div>
           </div>
         </div>
       )}
@@ -103,16 +103,16 @@ export default function DashboardPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="glass rounded-2xl p-6 h-52 animate-pulse bg-white/5" />
+            <div key={i} className="glass rounded-2xl p-6 h-52 animate-pulse" />
           ))}
         </div>
       ) : workflows.length === 0 ? (
-        <div className="glass rounded-3xl p-16 text-center shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-up border-white/10">
-          <div className="w-24 h-24 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/30 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[inset_0_0_30px_rgba(59,130,246,0.2)]">
+        <div className="glass rounded-3xl p-8 md:p-16 text-center shadow-lg dark:shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-up">
+          <div className="w-24 h-24 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20 border border-blue-500/20 dark:border-blue-500/30 text-blue-500 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[inset_0_0_30px_rgba(59,130,246,0.1)] dark:shadow-[inset_0_0_30px_rgba(59,130,246,0.2)]">
             <Hammer className="w-12 h-12" />
           </div>
-          <h3 className="text-3xl font-bold mb-4 text-white tracking-tight">Forge Your First Feature</h3>
-          <p className="text-slate-400 mb-10 max-w-lg mx-auto text-lg leading-relaxed">
+          <h3 className="text-3xl font-bold mb-4 text-slate-900 dark:text-white tracking-tight">Forge Your First Feature</h3>
+          <p className="text-slate-500 dark:text-slate-400 mb-10 max-w-lg mx-auto text-lg leading-relaxed">
             Start by creating a new workflow to turn your raw feature idea into a structured specification and execution plan.
           </p>
           <button
@@ -132,14 +132,14 @@ export default function DashboardPage() {
               <Link 
                 href={`/workflow/${wf.id}`} 
                 key={wf.id}
-                className="glass rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 group flex flex-col relative overflow-hidden hover:-translate-y-1 hover:shadow-[0_10px_40px_-10px_rgba(59,130,246,0.3)] hover:border-blue-500/30"
+                className="glass rounded-2xl p-6 hover:bg-slate-50 dark:hover:bg-white/10 transition-all duration-300 group flex flex-col relative overflow-hidden hover:-translate-y-1 hover:shadow-[0_10px_40px_-10px_rgba(59,130,246,0.15)] dark:hover:shadow-[0_10px_40px_-10px_rgba(59,130,246,0.3)] hover:border-blue-500/30"
               >
                 {hasStale && (
                   <div className="absolute top-0 right-0 w-2 h-full bg-gradient-to-b from-orange-400 to-red-500 shadow-[0_0_15px_rgba(249,115,22,0.5)]" title="Contains stale artifacts" />
                 )}
                 
                 <div className="flex justify-between items-start mb-6 gap-4">
-                  <h3 className="font-extrabold text-xl leading-tight line-clamp-2 text-white group-hover:text-blue-100 transition-colors">{wf.name}</h3>
+                  <h3 className="font-extrabold text-xl leading-tight line-clamp-2 text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-100 transition-colors">{wf.name}</h3>
                   <div className="flex items-center gap-2">
                     <span className={`text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold whitespace-nowrap shadow-sm border ${WORKFLOW_STATUS_COLORS[wf.status as WorkflowStatus]} ${wf.status === 'COMPLETED' ? 'border-green-200 dark:border-green-800' : 'border-transparent'}`}>
                       {WORKFLOW_STATUS_LABELS[wf.status as WorkflowStatus]}
@@ -165,15 +165,15 @@ export default function DashboardPage() {
                                     vStatus === "STALE" ? "bg-orange-500" :
                                     "bg-slate-600";
                       return (
-                        <div key={a.id} className={`w-6 h-6 rounded-full border-2 border-[#12141f] shadow-sm ${color}`} title={`${a.type}: ${vStatus}`} />
+                        <div key={a.id} className={`w-6 h-6 rounded-full border-2 border-white dark:border-[#12141f] shadow-sm ${color}`} title={`${a.type}: ${vStatus}`} />
                       );
                     })}
                   </div>
                 </div>
                 
-                <div className="mt-auto flex items-center justify-between text-xs text-slate-400 pt-5 border-t border-white/5">
+                <div className="mt-auto flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-5 border-t border-slate-200 dark:border-white/5">
                   <span className="font-medium">Updated {formatDistanceToNow(new Date(wf.updatedAt))} ago</span>
-                  <ArrowRight className="h-5 w-5 transform translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 text-blue-400" />
+                  <ArrowRight className="h-5 w-5 transform translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 text-blue-500 dark:text-blue-400" />
                 </div>
               </Link>
             );

@@ -5,9 +5,14 @@
 /* Force HMR invalidate: true */
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
     --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 210 40% 98%;
   }
 }
 
@@ -19,11 +24,11 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+    @apply bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none;
   }
   
   .glass-panel {
-    @apply bg-[#0f111a]/80 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)];
+    @apply bg-white/90 dark:bg-[#0f111a]/80 backdrop-blur-2xl border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.36)];
   }
 
   .glow-border {
