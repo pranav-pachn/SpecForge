@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
             versionId: planVersionId, // Tasks are generated from the Plan version
             title: t.title,
             description: t.description,
-            acceptanceCriteria: t.acceptanceCriteria,
-            verificationNotes: t.verificationNotes,
+            acceptanceCriteria: Array.isArray(t.acceptanceCriteria) ? t.acceptanceCriteria.map((c: any) => `- ${c}`).join('\n') : t.acceptanceCriteria,
+            verificationNotes: Array.isArray(t.verificationNotes) ? t.verificationNotes.map((c: any) => `- ${c}`).join('\n') : t.verificationNotes,
             priority: t.priority || 2,
             order: t.order || 0,
             status: "TODO",

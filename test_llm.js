@@ -11,7 +11,7 @@ async function test() {
   try {
     console.log('Generating...');
     const result = await generateText({
-      model: cerebras('llama-3.3-70b'),
+      model: cerebras('zai-glm-4.7'),
       prompt: 'Hello world'
     });
     console.log('Result:', result.text);

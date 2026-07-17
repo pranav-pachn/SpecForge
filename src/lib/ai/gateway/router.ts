@@ -30,33 +30,33 @@ export interface CapabilityRoute {
 // Router Configuration
 export const ROUTER_CONFIG: Record<CapabilityType, CapabilityRoute> = {
   spec: {
-    primary: { provider: "cerebras", model: "llama-3.3-70b" },
+    primary: { provider: "cerebras", model: "zai-glm-4.7" },
     fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "mistral", model: "mistral-large-latest" }],
     cacheTtlMs: 0
   },
   planning: {
-    primary: { provider: "cerebras", model: "llama-3.3-70b" },
-    fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "mistral", model: "mistral-large-latest" }],
+    primary: { provider: "cerebras", model: "gemma-4-31b" },
+    fallbacks: [{ provider: "groq", model: "mixtral-8x7b-32768" }, { provider: "mistral", model: "open-mixtral-8x22b" }],
     cacheTtlMs: 0
   },
   tasks: {
     primary: { provider: "groq", model: "llama-3.1-8b-instant" },
-    fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "mistral", model: "mistral-small-latest" }],
+    fallbacks: [{ provider: "groq", model: "llama3-8b-8192" }, { provider: "mistral", model: "mistral-small-latest" }],
     cacheTtlMs: 0
   },
   execution: {
-    primary: { provider: "cerebras", model: "llama-3.3-70b" },
-    fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "mistral", model: "mistral-large-latest" }],
+    primary: { provider: "cerebras", model: "gpt-oss-120b" },
+    fallbacks: [{ provider: "groq", model: "gemma2-9b-it" }, { provider: "mistral", model: "codestral-latest" }],
     cacheTtlMs: 0
   },
   review: {
-    primary: { provider: "groq", model: "llama-3.3-70b-versatile" },
-    fallbacks: [{ provider: "mistral", model: "mistral-large-latest" }],
+    primary: { provider: "groq", model: "llama3-70b-8192" },
+    fallbacks: [{ provider: "mistral", model: "open-mistral-nemo" }],
     cacheTtlMs: 1000 * 60 * 5 // 5 minutes
   },
   validation: {
     primary: { provider: "groq", model: "llama-3.1-8b-instant" },
-    fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "mistral", model: "mistral-small-latest" }],
+    fallbacks: [{ provider: "groq", model: "llama3-8b-8192" }, { provider: "mistral", model: "open-mixtral-8x7b" }],
     cacheTtlMs: 1000 * 60 * 5 // 5 minutes
   },
   drift: {
@@ -66,17 +66,17 @@ export const ROUTER_CONFIG: Record<CapabilityType, CapabilityRoute> = {
   },
   clarify: {
     primary: { provider: "openrouter", model: "deepseek/deepseek-r1:free" },
-    fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "mistral", model: "mistral-large-latest" }],
+    fallbacks: [{ provider: "groq", model: "mixtral-8x7b-32768" }, { provider: "mistral", model: "mistral-medium-latest" }],
     cacheTtlMs: 0
   },
   auto_fix: {
-    primary: { provider: "openrouter", model: "deepseek/deepseek-r1:free" },
-    fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "mistral", model: "mistral-large-latest" }],
+    primary: { provider: "openrouter", model: "meta-llama/llama-3-8b-instruct:free" },
+    fallbacks: [{ provider: "groq", model: "gemma2-9b-it" }, { provider: "mistral", model: "codestral-latest" }],
     cacheTtlMs: 0
   },
   review_gate: {
     primary: { provider: "groq", model: "llama-3.3-70b-versatile" },
-    fallbacks: [{ provider: "mistral", model: "mistral-large-latest" }],
+    fallbacks: [{ provider: "mistral", model: "open-mixtral-8x22b" }],
     cacheTtlMs: 0
   }
 };
