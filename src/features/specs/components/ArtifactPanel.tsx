@@ -152,7 +152,6 @@ export default function ArtifactPanel({
             <ExportMenu 
               content={content} 
               filename={title.replace(/\s+/g, '-').toLowerCase()} 
-              elementId="artifact-export-content" 
             />
           )}
           

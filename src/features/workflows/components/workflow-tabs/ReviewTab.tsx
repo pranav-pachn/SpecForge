@@ -11,7 +11,7 @@ const CHECK_LABELS: Record<string, string> = {
   CONSISTENCY: "Consistency & Metrics",
 };
 
-export default function ReviewTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
+export default function ReviewTab({ workflowId, onMutate, onNext }: { workflowId: string, onMutate?: () => void, onNext?: () => void }) {
   const router = useRouter();
   const [workflow, setWorkflow] = useState<any>(null);
   const [checks, setChecks] = useState<any[]>([]);
@@ -208,7 +208,7 @@ export default function ReviewTab({ workflowId, onMutate }: { workflowId: string
             disabled={approving || failCount > 0}
             className="px-5 py-2 rounded-md font-medium text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm transition-colors"
           >
-            Approve & Continue <ArrowRight className="w-4 h-4" />
+            Approve Checks <CheckCircle2 className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -247,6 +247,26 @@ export default function ReviewTab({ workflowId, onMutate }: { workflowId: string
           })}
         </div>
       </div>
+
+      {workflow?.status !== "SPEC_REVIEW" && workflow?.status !== "REVIEWING" && (
+        <div className="glass-panel p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-green-500/20 bg-green-500/5 shadow-[0_0_20px_rgba(34,197,94,0.1)] mt-8">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="w-6 h-6 text-green-500" />
+              <h3 className="text-xl font-bold text-white">Review Complete</h3>
+            </div>
+            <p className="text-sm text-slate-400">
+              {isFullReviewMode ? "Full pipeline review passed. Next up: generate validation reports." : "Spec review passed. Next up: generate implementation plan."}
+            </p>
+          </div>
+          <button
+            onClick={onNext}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all hover:shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+          >
+            Continue to {isFullReviewMode ? "Validate" : "Plan"} <ArrowRight className="w-5 h-5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

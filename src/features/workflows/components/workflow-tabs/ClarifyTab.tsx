@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Zap, CheckCircle2, X } from "lucide-react";
+import { Loader2, Zap, CheckCircle2, X, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function ClarifyTab({ workflowId, onMutate, onRegenerateComplete }: { workflowId: string, onMutate?: () => void, onRegenerateComplete?: () => void }) {
+export default function ClarifyTab({ workflowId, onMutate, onRegenerateComplete, onNext }: { workflowId: string, onMutate?: () => void, onRegenerateComplete?: () => void, onNext?: () => void }) {
   const router = useRouter();
   const [workflow, setWorkflow] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
@@ -223,7 +223,7 @@ export default function ClarifyTab({ workflowId, onMutate, onRegenerateComplete 
             disabled={!isComplete}
             className="px-6 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all hover:shadow-[0_0_25px_rgba(16,185,129,0.5)]"
           >
-            Continue to Review <CheckCircle2 className="w-5 h-5" />
+            Mark Complete <CheckCircle2 className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -282,6 +282,27 @@ export default function ClarifyTab({ workflowId, onMutate, onRegenerateComplete 
           </div>
         ))}
       </div>
+      
+      {workflow?.status !== "DRAFT" && workflow?.status !== "CLARIFYING" && (
+        <div className="glass-panel p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-green-500/20 bg-green-500/5 shadow-[0_0_20px_rgba(34,197,94,0.1)] mt-8">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="w-6 h-6 text-green-500" />
+              <h3 className="text-xl font-bold text-white">Clarification Complete</h3>
+            </div>
+            <p className="text-sm text-slate-400">
+              {questions.length > 0 ? `${questions.filter(q => q.status === "ANSWERED").length} ambiguities resolved and integrated into the spec. ` : 'Ambiguities resolved. '}
+              Next up: run review checks on the specification.
+            </p>
+          </div>
+          <button
+            onClick={onNext}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all hover:shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+          >
+            Continue to Review <ArrowRight className="w-5 h-5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

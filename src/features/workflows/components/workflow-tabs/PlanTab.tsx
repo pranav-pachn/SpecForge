@@ -5,17 +5,20 @@ import ArtifactPanel from "@/features/specs/components/ArtifactPanel";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAutosave } from "@/hooks/useAutosave";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 export default function PlanTab({ 
   workflowId, 
   specArtifact,
   planArtifact,
-  onMutate 
+  onMutate,
+  onNext 
 }: { 
   workflowId: string, 
   specArtifact?: any,
   planArtifact?: any,
-  onMutate?: () => void
+  onMutate?: () => void,
+  onNext?: () => void
 }) {
   const router = useRouter();
   const version = planArtifact?.versions?.[0];
@@ -129,24 +132,44 @@ export default function PlanTab({
   }
 
   return (
-    <ArtifactPanel
-      title="Implementation Plan"
-      status={version.status}
-      versionNumber={version.version}
-      content={content || version.content}
-      artifactId={planArtifact.id}
-      onVersionSelect={(v) => {
-        setContent(v.content);
-        setIsEditing(false);
-      }}
-      isEditing={isEditing}
-      sourceLabel={specVersion ? `Based on Spec v${specVersion.version}` : undefined}
-      onContentChange={setContent}
-      onToggleEdit={() => setIsEditing(!isEditing)}
-      onSaveDraft={handleSaveDraft}
-      onApprove={handleApprove}
-      onRegenerate={handleGenerate}
-      isLoading={isLoading}
-    />
+    <div className="space-y-6">
+      <ArtifactPanel
+        title="Implementation Plan"
+        status={version.status}
+        versionNumber={version.version}
+        content={content || version.content}
+        artifactId={planArtifact.id}
+        onVersionSelect={(v) => {
+          setContent(v.content);
+          setIsEditing(false);
+        }}
+        isEditing={isEditing}
+        sourceLabel={specVersion ? `Based on Spec v${specVersion.version}` : undefined}
+        onContentChange={setContent}
+        onToggleEdit={() => setIsEditing(!isEditing)}
+        onSaveDraft={handleSaveDraft}
+        onApprove={handleApprove}
+        onRegenerate={handleGenerate}
+        isLoading={isLoading}
+      />
+      
+      {version.status === "APPROVED" && (
+        <div className="glass-panel p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-green-500/20 bg-green-500/5 shadow-[0_0_20px_rgba(34,197,94,0.1)]">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="w-6 h-6 text-green-500" />
+              <h3 className="text-xl font-bold text-white">Plan Approved</h3>
+            </div>
+            <p className="text-sm text-slate-400">Implementation plan finalized. Next up: break it down into tasks.</p>
+          </div>
+          <button
+            onClick={onNext}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all hover:shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+          >
+            Continue to Tasks <ArrowRight className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

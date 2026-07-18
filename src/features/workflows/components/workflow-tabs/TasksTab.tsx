@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, ListTodo, Plus, ArrowRight, Split } from "lucide-react";
+import { Loader2, ListTodo, Plus, ArrowRight, Split, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TaskCard from "@/features/workflows/components/workflows/TaskCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { toast } from "sonner";
 
-export default function TasksTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
+export default function TasksTab({ workflowId, onMutate, onNext }: { workflowId: string, onMutate?: () => void, onNext?: () => void }) {
   const router = useRouter();
   const [workflow, setWorkflow] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -208,6 +208,7 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
       });
       router.refresh();
       onMutate?.();
+      if (onNext) onNext();
     } catch (e) {
       console.error(e);
     }
@@ -293,13 +294,6 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
           >
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Regenerate All"}
           </button>
-          
-          <button
-            onClick={handleContinue}
-            className="px-5 py-2 rounded-md font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center gap-2"
-          >
-            Continue to Execute <ArrowRight className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
@@ -380,6 +374,36 @@ export default function TasksTab({ workflowId, onMutate }: { workflowId: string,
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {workflow?.status && !["DRAFT", "CLARIFYING", "SPEC_REVIEW", "PLANNING"].includes(workflow.status) && (
+        <div className="glass-panel p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-green-500/20 bg-green-500/5 shadow-[0_0_20px_rgba(34,197,94,0.1)] mt-8 mx-6 mb-6">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="w-6 h-6 text-green-500" />
+              <h3 className="text-xl font-bold text-white">Tasks Finalized</h3>
+            </div>
+            <p className="text-sm text-slate-400">
+              {tasks.length > 0 ? `Task breakdown is complete. Generated ${tasks.length} tasks (${completedTasks} completed). ` : 'Review and refine your tasks. '}
+              When ready, proceed to generate execution packs.
+            </p>
+          </div>
+          {workflow.status === "TASK_BREAKDOWN" ? (
+            <button
+              onClick={handleContinue}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all hover:shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+            >
+              Mark Complete & Continue <ArrowRight className="w-5 h-5" />
+            </button>
+          ) : (
+            <button
+              onClick={onNext}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all hover:shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+            >
+              Continue to Execute <ArrowRight className="w-5 h-5" />
+            </button>
+          )}
         </div>
       )}
     </div>

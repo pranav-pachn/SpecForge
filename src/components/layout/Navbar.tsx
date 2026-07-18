@@ -24,7 +24,7 @@ export default function Navbar() {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <Link href="/" className="flex items-center gap-3 font-bold text-lg group">
+        <Link href={session ? "/dashboard" : "/"} className="flex items-center gap-3 font-bold text-lg group">
           <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-2 rounded-xl shadow-[0_0_15px_rgba(59,130,246,0.5)] group-hover:shadow-[0_0_25px_rgba(59,130,246,0.7)] group-hover:scale-105 transition-all duration-300">
             <Hammer className="h-4 w-4" />
           </div>

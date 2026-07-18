@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Route } from "lucide-react";
+import { Loader2, Route, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import DriftScoreHero from "@/features/workflows/components/drift/DriftScoreHero";
@@ -9,7 +9,7 @@ import VersionDiffPanel from "@/features/workflows/components/drift/VersionDiffP
 import ImpactGraphView from "@/features/workflows/components/drift/ImpactGraphView";
 import RegenerationDialog from "@/features/workflows/components/drift/RegenerationDialog";
 
-export default function DriftTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
+export default function DriftTab({ workflowId, workflowStatus, onMutate }: { workflowId: string, workflowStatus?: string, onMutate?: () => void }) {
   const router = useRouter();
   const [data, setData] = useState<{events: any[], analysis: any}>({ events: [], analysis: null });
   const [loading, setLoading] = useState(true);
@@ -86,6 +86,36 @@ export default function DriftTab({ workflowId, onMutate }: { workflowId: string,
   const { events, analysis } = data;
 
   if (!analysis && events.length === 0) {
+    if (workflowStatus === 'COMPLETED' || workflowStatus === 'ARCHIVED') {
+      return (
+        <div className="glass-panel p-12 rounded-3xl text-center border-green-500/20 bg-gradient-to-b from-green-500/5 to-transparent relative overflow-hidden mt-4 shadow-[0_0_40px_rgba(34,197,94,0.1)]">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-green-500/10 via-transparent to-transparent pointer-events-none" />
+          <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+            <div className="absolute inset-0 bg-green-400/20 rounded-full animate-ping" />
+            <CheckCircle className="w-12 h-12 text-green-400" />
+          </div>
+          <h2 className="text-4xl font-black text-white mb-4 tracking-tight">Ready for Development</h2>
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+            Your specification is fully validated, execution tasks are generated, and all downstream artifacts are in sync. SpecForge has prepared everything you need to start coding.
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <button 
+              onClick={() => alert("Copied tasks to clipboard!")}
+              className="px-8 py-4 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:scale-105"
+            >
+              Copy Tasks to Cursor
+            </button>
+            <button 
+              onClick={() => alert("Use the Export Menu in the top right to download your PDF.")}
+              className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all border border-slate-700 hover:scale-105"
+            >
+              Download PDF Report
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="glass rounded-xl p-12 text-center animate-in shadow-[0_0_40px_rgba(0,0,0,0.3)] border-white/10">
         <Route className="w-12 h-12 text-slate-300 mx-auto mb-4" />

@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { db as prisma } from "@/lib/db";
+import { getAuthenticatedUser } from "@/server/services/api-helpers";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getAuthenticatedUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -17,45 +18,20 @@ export async function GET(req: Request) {
       return NextResponse.json({ workflows: [], projects: [] });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: { workspaces: true }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const workspaceIds = user.workspaces.map(w => w.workspaceId);
-
     const workflows = await prisma.workflow.findMany({
       where: {
+        creatorId: user.id,
         name: { contains: query, mode: "insensitive" },
-        project: {
-          workspaceId: { in: workspaceIds }
-        }
       },
       take: 5,
       select: {
         id: true,
         name: true,
-        status: true
-      }
-    });
-
-    const projects = await prisma.project.findMany({
-      where: {
-        name: { contains: query, mode: "insensitive" },
-        workspaceId: { in: workspaceIds }
+        status: true,
       },
-      take: 3,
-      select: {
-        id: true,
-        name: true
-      }
     });
 
-    return NextResponse.json({ workflows, projects });
+    return NextResponse.json({ workflows, projects: [] });
   } catch (error) {
     console.error("Search error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

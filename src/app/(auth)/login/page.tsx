@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { LogIn, Loader2, Mail, Key } from "lucide-react";
 
-export default function LoginPage() {
+// Inner component that uses useSearchParams (must be wrapped in Suspense)
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -162,11 +163,24 @@ export default function LoginPage() {
       </div>
 
       <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center text-sm text-slate-500">
-        Don't have an account?{" "}
+        Don&apos;t have an account?{" "}
         <Link href="/signup" className="text-blue-600 hover:text-blue-700 font-medium hover:underline decoration-blue-200 underline-offset-4 transition-colors">
           Create one now
         </Link>
       </div>
     </div>
+  );
+}
+
+// Outer page wraps the form in Suspense (required by Next.js for useSearchParams)
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="w-full flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

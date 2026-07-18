@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { X, Sparkles, Loader2, Wand2 } from "lucide-react";
+import { X, Sparkles, Loader2, Wand2, CheckCircle2 } from "lucide-react";
 
 export default function CreateWorkflowModal({
   isOpen,
@@ -21,7 +21,8 @@ export default function CreateWorkflowModal({
   const [constraints, setConstraints] = useState("");
   const [targetTool, setTargetTool] = useState("");
   
-  const [loading, setLoading] = useState(false);
+  const [loadingState, setLoadingState] = useState<"idle" | "initializing" | "analyzing" | "extracting" | "structuring">("idle");
+  const loading = loadingState !== "idle";
   const [error, setError] = useState("");
   const [show, setShow] = useState(false);
 
@@ -43,7 +44,7 @@ export default function CreateWorkflowModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setLoadingState("initializing");
     setError("");
 
     try {
@@ -65,6 +66,13 @@ export default function CreateWorkflowModal({
 
       if (!draftVersion) throw new Error("Could not find draft spec version");
 
+      setLoadingState("analyzing");
+      
+      const timeouts = [
+        setTimeout(() => setLoadingState(prev => prev !== "idle" ? "extracting" : prev), 1500),
+        setTimeout(() => setLoadingState(prev => prev !== "idle" ? "structuring" : prev), 3500)
+      ];
+
       // 2. Generate the Spec via AI using the hybrid intake fields
       const aiRes = await fetch("/api/ai/spec", {
         method: "POST",
@@ -80,15 +88,17 @@ export default function CreateWorkflowModal({
           targetTool,
         }),
       });
+      timeouts.forEach(clearTimeout);
       const aiData = await aiRes.json();
       if (!aiRes.ok) throw new Error(aiData.error || "Failed to generate spec");
 
       // Success! Redirect to the workflow pipeline page
+      setLoadingState("idle");
       onClose();
       router.push(`/workflow/${wfData.id}`);
     } catch (err: any) {
       setError(err.message || "An error occurred");
-      setLoading(false);
+      setLoadingState("idle");
     }
   };
 
@@ -111,12 +121,44 @@ export default function CreateWorkflowModal({
 
         <div className="p-6 overflow-y-auto flex-1 relative">
           {loading && (
-            <div className="absolute inset-0 z-10 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center">
-              <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4 animate-pulse">
-                <Wand2 className="w-8 h-8 text-blue-600 animate-bounce" />
+            <div className="absolute inset-0 z-10 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-8">
+              <div className="w-16 h-16 bg-blue-900/30 rounded-full flex items-center justify-center mb-6 border border-blue-500/20 shadow-[0_0_30px_rgba(59,130,246,0.2)] relative">
+                <Wand2 className="w-8 h-8 text-blue-400 animate-pulse" />
+                <div className="absolute inset-0 border-t-2 border-blue-500 rounded-full animate-spin" />
               </div>
-              <h3 className="text-lg font-bold text-slate-200 mb-2">Forging your Spec...</h3>
-              <p className="text-slate-500 font-medium">Analyzing raw input and structuring requirements.</p>
+              <h3 className="text-xl font-bold text-white mb-8">Forging Your Specification</h3>
+              
+              <div className="w-full max-w-sm space-y-3">
+                {[
+                  { id: "initializing", label: "Initializing Workflow" },
+                  { id: "analyzing", label: "Analyzing Input Context" },
+                  { id: "extracting", label: "Extracting Core Requirements" },
+                  { id: "structuring", label: "Structuring Document" },
+                ].map((step) => {
+                  const stateOrder = ["idle", "initializing", "analyzing", "extracting", "structuring"];
+                  const currentIndex = stateOrder.indexOf(loadingState);
+                  const stepIndex = stateOrder.indexOf(step.id);
+                  const isPast = currentIndex > stepIndex;
+                  const isCurrent = currentIndex === stepIndex;
+                  
+                  return (
+                    <div key={step.id} className={`flex items-center gap-4 p-3 rounded-xl transition-all duration-500 ${isCurrent ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm translate-x-2' : 'border border-transparent'}`}>
+                       <div className="shrink-0 w-6 h-6 flex items-center justify-center">
+                         {isPast ? (
+                           <CheckCircle2 className="w-5 h-5 text-green-500" />
+                         ) : isCurrent ? (
+                           <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                         ) : (
+                           <div className="w-2 h-2 rounded-full bg-slate-700" />
+                         )}
+                       </div>
+                       <span className={`font-medium ${isPast ? 'text-slate-300' : isCurrent ? 'text-blue-400 font-bold' : 'text-slate-600'}`}>
+                         {step.label}
+                       </span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
 

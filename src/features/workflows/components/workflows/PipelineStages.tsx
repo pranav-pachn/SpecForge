@@ -32,10 +32,10 @@ export default function PipelineStages({ currentStatus }: { currentStatus: Workf
               
               <div 
                 className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center border-2 bg-[#0a0a14] transition-all duration-300 shadow-sm",
+                  "w-8 h-8 rounded-full flex items-center justify-center border-2 bg-slate-50 dark:bg-[#0a0a14] transition-all duration-300 shadow-sm",
                   isCompleted ? "border-blue-500 bg-blue-600 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]" : 
-                  isCurrent ? "border-blue-500 text-blue-400 ring-4 ring-blue-500/20" : 
-                  "border-white/10 text-slate-500 hover:border-white/20"
+                  isCurrent ? "border-blue-500 text-blue-500 dark:text-blue-400 ring-4 ring-blue-500/20" : 
+                  "border-slate-300 dark:border-white/10 text-slate-500 hover:border-slate-400 dark:hover:border-white/20"
                 )}
               >
                 {isCompleted ? <Check className="w-4 h-4" /> :

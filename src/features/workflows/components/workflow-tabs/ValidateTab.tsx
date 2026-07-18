@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, ClipboardCheck, ArrowRight, ShieldCheck, RefreshCw, Wand2 } from "lucide-react";
+import { Loader2, ClipboardCheck, ArrowRight, ShieldCheck, RefreshCw, Wand2, CheckCircle2, FileText, Edit } from "lucide-react";
 import { useRouter } from "next/navigation";
 import ValidationScoreHero from "../validation/ValidationScoreHero";
 import ValidationCategoryCard from "../validation/ValidationCategoryCard";
 
-export default function ValidateTab({ workflowId, onMutate }: { workflowId: string, onMutate?: () => void }) {
+export default function ValidateTab({ workflowId, onMutate, onNext, onEditSpec }: { workflowId: string, onMutate?: () => void, onNext?: () => void, onEditSpec?: () => void }) {
   const router = useRouter();
   const [workflow, setWorkflow] = useState<any>(null);
   const [report, setReport] = useState<any>(null);
@@ -165,39 +165,6 @@ export default function ValidateTab({ workflowId, onMutate }: { workflowId: stri
               <><RefreshCw className="w-4 h-4" />Re-run Validation</>
             )}
           </button>
-
-          <div className="relative group">
-            {workflow?.status !== 'ARCHIVED' && (
-              <button
-                onClick={handleComplete}
-                disabled={completing || !isReady}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 disabled:shadow-none transition-all active:scale-95"
-              >
-                {completing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ShieldCheck className="w-4 h-4" />
-                )}
-                {completing 
-                  ? (workflow?.status === 'COMPLETED' ? 'Archiving...' : 'Completing...') 
-                  : (workflow?.status === 'COMPLETED' ? 'Archive Workflow' : 'Complete Workflow')}
-                {!completing && <ArrowRight className="w-4 h-4" />}
-              </button>
-            )}
-            {workflow?.status === 'ARCHIVED' && (
-              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-slate-400 bg-slate-800 border border-slate-700 shadow-none cursor-not-allowed">
-                <ShieldCheck className="w-4 h-4" />
-                Workflow Archived
-              </div>
-            )}
-
-            {!isReady && !completing && (
-              <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl z-10">
-                Score must be ≥ 80 to complete
-                <div className="absolute top-full right-4 border-4 border-transparent border-t-slate-900" />
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
@@ -215,6 +182,48 @@ export default function ValidateTab({ workflowId, onMutate }: { workflowId: stri
             onFixGenerated={fetchData}
           />
         ))}
+      </div>
+
+      <div className="p-6 border-t border-white/10 mt-8">
+        <div className="glass-panel p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-green-500/20 bg-green-500/5 shadow-[0_0_20px_rgba(34,197,94,0.1)]">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="w-6 h-6 text-green-500" />
+              <h3 className="text-xl font-bold text-white">Validation Complete</h3>
+            </div>
+            <p className="text-sm text-slate-400">
+              {report ? `Everything traces back correctly with a validation score of ${report.overallScore}/100. ${missingRequirements === 0 ? "No critical traceability issues found." : `${missingRequirements} critical issues remaining.`}` : 'Everything traces back correctly.'} You can now complete the workflow or make further spec edits.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onEditSpec}
+              className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all border border-slate-700 hover:border-slate-600"
+            >
+              <Edit className="w-5 h-5" /> Edit Spec
+            </button>
+            {workflow?.status !== 'COMPLETED' && workflow?.status !== 'ARCHIVED' && (
+              <button
+                onClick={() => {
+                  handleComplete();
+                  if (onNext) onNext();
+                }}
+                disabled={!isReady || completing}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-xl font-bold flex items-center gap-2 transition-all hover:shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+              >
+                Complete Workflow <ArrowRight className="w-5 h-5" />
+              </button>
+            )}
+            {(workflow?.status === 'COMPLETED' || workflow?.status === 'ARCHIVED') && (
+              <button
+                onClick={onNext}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all hover:shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+              >
+                Go to Drift Dashboard <ArrowRight className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

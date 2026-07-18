@@ -13,15 +13,15 @@ interface WorkflowTabsProps {
 }
 
 const TABS = [
-  { id: 'spec', label: 'Spec', icon: FileText, number: 1 },
-  { id: 'clarify', label: 'Clarify', icon: MessageSquare, number: 2 },
-  { id: 'review', label: 'Spec Review', icon: CheckSquare, number: 3 },
-  { id: 'plan', label: 'Plan', icon: Layers, number: 4 },
-  { id: 'tasks', label: 'Tasks', icon: ListTodo, number: 5 },
-  { id: 'execute', label: 'Execute', icon: Zap, number: 6 },
-  { id: 'engineering_review', label: 'Eng Review', icon: Activity, number: 7 },
-  { id: 'validate', label: 'Validate', icon: ShieldCheck, number: 8 },
-  { id: 'drift', label: 'Drift', icon: Activity, number: 9 },
+  { id: 'spec', label: '① Spec', icon: FileText, number: 1 },
+  { id: 'clarify', label: '② Clarify', icon: MessageSquare, number: 2 },
+  { id: 'review', label: '③ Spec Review', icon: CheckSquare, number: 3 },
+  { id: 'plan', label: '④ Plan', icon: Layers, number: 4 },
+  { id: 'tasks', label: '⑤ Tasks', icon: ListTodo, number: 5 },
+  { id: 'execute', label: '⑥ Execute', icon: Zap, number: 6 },
+  { id: 'engineering_review', label: '⑦ Eng Review', icon: Activity, number: 7 },
+  { id: 'validate', label: '⑧ Validate', icon: ShieldCheck, number: 8 },
+  { id: 'drift', label: '⑨ Drift', icon: Activity, number: 9 },
 ] as const;
 
 export default function WorkflowTabs({ activeTab, onTabChange, workflow }: WorkflowTabsProps) {
@@ -111,12 +111,6 @@ export default function WorkflowTabs({ activeTab, onTabChange, workflow }: Workf
             <Icon className={cn("w-4 h-4 transition-colors", isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-500")} />
             <span>{tab.label}</span>
             {getTabStatusIndicator(tab.id as TabId)}
-            <span className={cn(
-              "ml-1 text-[10px] px-1.5 rounded-md font-mono transition-colors",
-              isActive ? "bg-blue-900/50 text-blue-300" : "bg-white/5 text-slate-500 opacity-0 group-hover:opacity-100"
-            )}>
-              {tab.number}
-            </span>
           </button>
         );
       })}

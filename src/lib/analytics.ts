@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { db as prisma } from "@/lib/db";
 import { EventType } from "@prisma/client";
 
 export async function trackEvent(
