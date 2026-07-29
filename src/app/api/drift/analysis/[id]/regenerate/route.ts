@@ -39,9 +39,9 @@ export async function POST(
     await db.driftEvent.updateMany({
       where: {
         versionId: analysis.oldVersionId,
-        resolved: false
+        status: "OPEN"
       },
-      data: { resolved: true }
+      data: { status: "RESOLVED" }
     });
 
     // Mark analysis as resolved

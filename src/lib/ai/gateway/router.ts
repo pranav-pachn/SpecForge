@@ -3,6 +3,7 @@ import { cerebras } from "../providers/cerebras";
 import { groq } from "../providers/groq";
 import { mistral } from "../providers/mistral";
 import { openRouter } from "../providers/openrouter";
+import { gemini } from "../providers/gemini";
 
 export type CapabilityType = 
   | "spec"
@@ -14,10 +15,11 @@ export type CapabilityType =
   | "drift"
   | "clarify"
   | "auto_fix"
-  | "review_gate";
+  | "review_gate"
+  | "architect";
 
 export interface ProviderRoute {
-  provider: "cerebras" | "groq" | "mistral" | "openrouter";
+  provider: "cerebras" | "groq" | "mistral" | "openrouter" | "gemini";
   model: string;
 }
 
@@ -30,33 +32,33 @@ export interface CapabilityRoute {
 // Router Configuration
 export const ROUTER_CONFIG: Record<CapabilityType, CapabilityRoute> = {
   spec: {
-    primary: { provider: "cerebras", model: "zai-glm-4.7" },
-    fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "mistral", model: "mistral-large-latest" }],
+    primary: { provider: "gemini", model: "gemini-2.5-pro" },
+    fallbacks: [{ provider: "cerebras", model: "llama3.1-70b" }, { provider: "openrouter", model: "anthropic/claude-3.5-sonnet" }],
     cacheTtlMs: 0
   },
   planning: {
-    primary: { provider: "cerebras", model: "gemma-4-31b" },
-    fallbacks: [{ provider: "groq", model: "mixtral-8x7b-32768" }, { provider: "mistral", model: "open-mixtral-8x22b" }],
+    primary: { provider: "gemini", model: "gemini-2.5-pro" },
+    fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "openrouter", model: "anthropic/claude-3.5-sonnet" }],
     cacheTtlMs: 0
   },
   tasks: {
-    primary: { provider: "groq", model: "llama-3.1-8b-instant" },
-    fallbacks: [{ provider: "groq", model: "llama3-8b-8192" }, { provider: "mistral", model: "mistral-small-latest" }],
+    primary: { provider: "groq", model: "llama-3.3-70b-versatile" },
+    fallbacks: [{ provider: "mistral", model: "mistral-large-latest" }, { provider: "openrouter", model: "anthropic/claude-3.5-sonnet" }],
     cacheTtlMs: 0
   },
   execution: {
-    primary: { provider: "cerebras", model: "gpt-oss-120b" },
-    fallbacks: [{ provider: "groq", model: "gemma2-9b-it" }, { provider: "mistral", model: "codestral-latest" }],
+    primary: { provider: "cerebras", model: "llama3.1-70b" },
+    fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "mistral", model: "codestral-latest" }],
     cacheTtlMs: 0
   },
   review: {
-    primary: { provider: "groq", model: "llama3-70b-8192" },
-    fallbacks: [{ provider: "mistral", model: "open-mistral-nemo" }],
+    primary: { provider: "mistral", model: "mistral-large-latest" },
+    fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "openrouter", model: "anthropic/claude-3.5-sonnet" }],
     cacheTtlMs: 1000 * 60 * 5 // 5 minutes
   },
   validation: {
-    primary: { provider: "groq", model: "llama-3.1-8b-instant" },
-    fallbacks: [{ provider: "groq", model: "llama3-8b-8192" }, { provider: "mistral", model: "open-mixtral-8x7b" }],
+    primary: { provider: "mistral", model: "mistral-large-latest" },
+    fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "openrouter", model: "anthropic/claude-3.5-sonnet" }],
     cacheTtlMs: 1000 * 60 * 5 // 5 minutes
   },
   drift: {
@@ -65,18 +67,23 @@ export const ROUTER_CONFIG: Record<CapabilityType, CapabilityRoute> = {
     cacheTtlMs: 1000 * 60 * 2 // 2 minutes
   },
   clarify: {
-    primary: { provider: "openrouter", model: "deepseek/deepseek-r1:free" },
-    fallbacks: [{ provider: "groq", model: "mixtral-8x7b-32768" }, { provider: "mistral", model: "mistral-medium-latest" }],
+    primary: { provider: "groq", model: "llama-3.3-70b-versatile" },
+    fallbacks: [{ provider: "mistral", model: "mistral-large-latest" }, { provider: "openrouter", model: "anthropic/claude-3.5-sonnet" }],
     cacheTtlMs: 0
   },
   auto_fix: {
-    primary: { provider: "openrouter", model: "meta-llama/llama-3-8b-instruct:free" },
-    fallbacks: [{ provider: "groq", model: "gemma2-9b-it" }, { provider: "mistral", model: "codestral-latest" }],
+    primary: { provider: "openrouter", model: "anthropic/claude-3.5-sonnet" },
+    fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "mistral", model: "codestral-latest" }],
     cacheTtlMs: 0
   },
   review_gate: {
     primary: { provider: "groq", model: "llama-3.3-70b-versatile" },
-    fallbacks: [{ provider: "mistral", model: "open-mixtral-8x22b" }],
+    fallbacks: [{ provider: "mistral", model: "mistral-large-latest" }],
+    cacheTtlMs: 0
+  },
+  architect: {
+    primary: { provider: "cerebras", model: "llama3.1-70b" },
+    fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "mistral", model: "mistral-large-latest" }],
     cacheTtlMs: 0
   }
 };
@@ -91,6 +98,8 @@ export function resolveProvider(route: ProviderRoute): LanguageModel {
       return mistral(route.model);
     case "openrouter":
       return openRouter(route.model);
+    case "gemini":
+      return gemini(route.model);
     default:
       throw new Error(`Unknown provider: ${route.provider}`);
   }

@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ApprovalPolicy {
+  AUTO
+  HIGH_AND_CRITICAL
+  ALL
+}
+
 model User {
   id            String            @id @default(cuid())
   email         String            @unique
@@ -92,6 +98,7 @@ model Workflow {
   id                 String              @id @default(cuid())
   name               String
   status             WorkflowStatus      @default(DRAFT)
+  approvalPolicy     ApprovalPolicy      @default(HIGH_AND_CRITICAL)
   projectId          String
   creatorId          String
   createdAt          DateTime            @default(now())
@@ -101,6 +108,8 @@ model Workflow {
   engineeringReviews EngineeringReview[]
   tasks              Task[]
   validationReports  ValidationReport[]
+  knowledgeNodes     KnowledgeNode[]
+  engineeringMemories EngineeringMemory[]
   creator            User                @relation(fields: [creatorId], references: [id])
   project            Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
@@ -127,13 +136,14 @@ model ArtifactVersion {
   clarifications      ClarificationQuestion[]
   driftAsNew          DriftAnalysis[]         @relation("DriftNewVersion")
   driftAsOld          DriftAnalysis[]         @relation("DriftOldVersion")
-  sourceOfDriftEvents DriftEvent[]            @relation("SourceVersion")
-  driftEvents         DriftEvent[]
+  driftEvents         DriftEvent[]            @relation("SourceVersion")
+  targetDriftEvents   DriftEvent[]
   engineeringReviews  EngineeringReview[]
   executionPacks      ExecutionPack[]
   reviewChecks        ReviewCheck[]
   tasks               Task[]
   validationReports   ValidationReport[]
+  engineeringMemories EngineeringMemory[]
 }
 
 model ClarificationQuestion {
@@ -210,6 +220,14 @@ model ReviewCheck {
   version     ArtifactVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
 }
 
+enum DriftEventStatus {
+  OPEN
+  ACKNOWLEDGED
+  REGENERATED
+  RESOLVED
+  IGNORED
+}
+
 model DriftEvent {
   id              String           @id @default(cuid())
   versionId       String
@@ -217,7 +235,9 @@ model DriftEvent {
   entityType      DriftEntityType
   entityId        String
   description     String
-  resolved        Boolean          @default(false)
+  status          DriftEventStatus @default(OPEN)
+  resolvedBy      String?
+  resolvedAt      DateTime?
   createdAt       DateTime         @default(now())
   sourceVersion   ArtifactVersion? @relation("SourceVersion", fields: [sourceVersionId], references: [id])
   version         ArtifactVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
@@ -337,6 +357,8 @@ model DriftAnalysis {
   workflow     Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
 }
 
+
+
 enum WorkflowStatus {
   DRAFT
   CLARIFYING
@@ -354,6 +376,7 @@ enum WorkflowStatus {
 enum ArtifactType {
   SPEC
   PLAN
+  ARCHITECTURE
   TASK_BREAKDOWN
   EXECUTION_PACK
 }
@@ -416,4 +439,125 @@ enum EventType {
   TASKS_EXPORTED
   REVIEW_ISSUE_RESOLVED
   STALE_ARTIFACT_TRIGGERED
+}
+
+model KnowledgeNode {
+  id              String   @id @default(cuid())
+  workflowId      String
+  type            String   // "requirement" | "architecture" | "decision" | "review" | "validation" | "task"
+  artifactId      String?  
+  version         Int      @default(1)
+  status          String   @default("APPROVED") // Only index stable artifacts
+  title           String
+  content         String
+  embedding       Unsupported("vector(1536)")? 
+  importanceScore Float    @default(0.5)
+  metadata        Json     @default("{}")
+  createdAt       DateTime @default(now())
+  
+  workflow        Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  
+  sourceRelations KnowledgeRelationship[] @relation("SourceNode")
+  targetRelations KnowledgeRelationship[] @relation("TargetNode")
+
+  @@index([workflowId])
+  @@index([type])
+}
+
+model KnowledgeRelationship {
+  id           String @id @default(cuid())
+  sourceNodeId String
+  targetNodeId String
+  relationType String // e.g., "implemented_by", "reviewed_by", "validates"
+  
+  sourceNode   KnowledgeNode @relation("SourceNode", fields: [sourceNodeId], references: [id], onDelete: Cascade)
+  targetNode   KnowledgeNode @relation("TargetNode", fields: [targetNodeId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceNodeId, targetNodeId, relationType])
+}
+
+model EngineeringMemory {
+  id                 String               @id @default(cuid())
+  decisionId         String               @unique // e.g., DEC-001
+  workflowId         String
+  memoryType         MemoryType
+  status             MemoryStatus         @default(ACTIVE)
+  severity           MemorySeverity       @default(MEDIUM)
+  title              String
+  description        String               // What changed?
+  reason             String               // Why?
+  sourceVersionId    String?              // Link to ArtifactVersion
+  createdBy          MemoryCreatedBy      @default(AI_DECISION)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  
+  // Phase 4 additions
+  revisionCount      Int                  @default(1)
+  lastRevisedAt      DateTime?
+  consolidatedTitle  String?
+  confidence         Float?
+  confidenceSources  Json?
+  approvedBy         String?
+  approvedAt         DateTime?
+  rejectedReason     String?
+  
+  workflow           Workflow             @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  sourceVersion      ArtifactVersion?     @relation(fields: [sourceVersionId], references: [id], onDelete: SetNull)
+  revisions          MemoryRevision[]
+}
+
+model MemoryRevision {
+  id          String            @id @default(cuid())
+  memoryId    String
+  revision    Int
+  title       String
+  description String
+  reason      String
+  oldContent  String?
+  newContent  String?
+  createdAt   DateTime          @default(now())
+  memory      EngineeringMemory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+}
+
+model MemoryRelationship {
+  id             String   @id @default(cuid())
+  sourceType     String   // "MEMORY", "ARTIFACT_VERSION", "TASK", "KNOWLEDGE_NODE"
+  sourceId       String
+  targetType     String
+  targetId       String
+  relationType   String   // "AFFECTS", "RESOLVES", "SUPERSEDES", "IMPLEMENTS"
+  createdAt      DateTime @default(now())
+  
+  @@unique([sourceType, sourceId, targetType, targetId, relationType])
+}
+
+enum MemoryType {
+  REQUIREMENT_CHANGE
+  ARCHITECTURE_CHANGE
+  PLANNING_CHANGE
+  TASK_CHANGE
+  REVIEW_RESOLUTION
+  VALIDATION_RESULT
+}
+
+enum MemoryStatus {
+  PENDING_REVIEW
+  ACTIVE
+  REJECTED
+  SUPERSEDED
+  RESOLVED
+  ARCHIVED
+}
+
+enum MemorySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum MemoryCreatedBy {
+  USER
+  AI_DECISION
+  SYSTEM
 }

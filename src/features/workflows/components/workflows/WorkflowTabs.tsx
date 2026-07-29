@@ -1,10 +1,11 @@
 "use client";
 
-import { FileText, MessageSquare, Layers, ListTodo, Zap, CheckSquare, ShieldCheck, Activity } from "lucide-react";
+import { FileText, MessageSquare, Layers, ListTodo, Zap, CheckSquare, ShieldCheck, Activity, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
 
-export type TabId = 'spec' | 'clarify' | 'plan' | 'tasks' | 'execute' | 'review' | 'engineering_review' | 'validate' | 'drift';
+import { Brain, Network } from "lucide-react";
+export type TabId = 'spec' | 'clarify' | 'review' | 'plan' | 'architecture' | 'knowledge' | 'memory' | 'graph' | 'traceability' | 'tasks' | 'execute' | 'engineering_review' | 'validate' | 'drift';
 
 interface WorkflowTabsProps {
   activeTab: TabId;
@@ -12,16 +13,23 @@ interface WorkflowTabsProps {
   workflow?: any;
 }
 
+import { Database } from "lucide-react";
+
 const TABS = [
   { id: 'spec', label: '① Spec', icon: FileText, number: 1 },
   { id: 'clarify', label: '② Clarify', icon: MessageSquare, number: 2 },
   { id: 'review', label: '③ Spec Review', icon: CheckSquare, number: 3 },
   { id: 'plan', label: '④ Plan', icon: Layers, number: 4 },
-  { id: 'tasks', label: '⑤ Tasks', icon: ListTodo, number: 5 },
-  { id: 'execute', label: '⑥ Execute', icon: Zap, number: 6 },
-  { id: 'engineering_review', label: '⑦ Eng Review', icon: Activity, number: 7 },
-  { id: 'validate', label: '⑧ Validate', icon: ShieldCheck, number: 8 },
-  { id: 'drift', label: '⑨ Drift', icon: Activity, number: 9 },
+  { id: 'architecture', label: '⑤ Architecture', icon: GitBranch, number: 5 },
+  { id: 'knowledge', label: '⑥ Knowledge Base', icon: Database, number: 6 },
+  { id: 'memory', label: '⑦ Eng Memory', icon: Brain, number: 7 },
+  { id: 'graph', label: '⑧ Eng Graph', icon: Network, number: 8 },
+  { id: 'traceability', label: '⑨ Traceability', icon: FileText, number: 9 },
+  { id: 'tasks', label: '⑩ Tasks', icon: ListTodo, number: 10 },
+  { id: 'execute', label: '⑪ Execute', icon: Zap, number: 11 },
+  { id: 'engineering_review', label: '⑫ Eng Review', icon: Activity, number: 12 },
+  { id: 'validate', label: '⑬ Validate', icon: ShieldCheck, number: 13 },
+  { id: 'drift', label: '⑭ Drift', icon: Activity, number: 14 },
 ] as const;
 
 export default function WorkflowTabs({ activeTab, onTabChange, workflow }: WorkflowTabsProps) {

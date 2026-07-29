@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { X, Sparkles, Loader2, Wand2, CheckCircle2 } from "lucide-react";
+import ProgressRail from "../generate/ProgressRail";
 
 export default function CreateWorkflowModal({
   isOpen,
@@ -21,8 +22,7 @@ export default function CreateWorkflowModal({
   const [constraints, setConstraints] = useState("");
   const [targetTool, setTargetTool] = useState("");
   
-  const [loadingState, setLoadingState] = useState<"idle" | "initializing" | "analyzing" | "extracting" | "structuring">("idle");
-  const loading = loadingState !== "idle";
+  const [createdWorkflowId, setCreatedWorkflowId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [show, setShow] = useState(false);
 
@@ -44,11 +44,10 @@ export default function CreateWorkflowModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoadingState("initializing");
     setError("");
 
     try {
-      // 1. Create the Workflow & Draft Spec
+      // 1. Create the Workflow
       const wfRes = await fetch("/api/workflows", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -57,48 +56,16 @@ export default function CreateWorkflowModal({
       const wfData = await wfRes.json();
       if (!wfRes.ok) throw new Error(wfData.error || "Failed to create workflow");
 
-      // The new workflow API creates the first Spec artifact and draft version
-      // We need to fetch the artifact to get the version ID
-      const artifactRes = await fetch(`/api/artifacts?workflowId=${wfData.id}`);
-      const artifacts = await artifactRes.json();
-      const specArtifact = artifacts.find((a: any) => a.type === "SPEC");
-      const draftVersion = specArtifact?.versions[0];
-
-      if (!draftVersion) throw new Error("Could not find draft spec version");
-
-      setLoadingState("analyzing");
-      
-      const timeouts = [
-        setTimeout(() => setLoadingState(prev => prev !== "idle" ? "extracting" : prev), 1500),
-        setTimeout(() => setLoadingState(prev => prev !== "idle" ? "structuring" : prev), 3500)
-      ];
-
-      // 2. Generate the Spec via AI using the hybrid intake fields
-      const aiRes = await fetch("/api/ai/spec", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          workflowId: wfData.id,
-          versionId: draftVersion.id,
-          rawIdea,
-          audience,
-          goal,
-          outOfScope,
-          constraints,
-          targetTool,
-        }),
-      });
-      timeouts.forEach(clearTimeout);
-      const aiData = await aiRes.json();
-      if (!aiRes.ok) throw new Error(aiData.error || "Failed to generate spec");
-
-      // Success! Redirect to the workflow pipeline page
-      setLoadingState("idle");
-      onClose();
-      router.push(`/workflow/${wfData.id}`);
+      setCreatedWorkflowId(wfData.id);
     } catch (err: any) {
       setError(err.message || "An error occurred");
-      setLoadingState("idle");
+    }
+  };
+
+  const handlePipelineComplete = () => {
+    onClose();
+    if (createdWorkflowId) {
+      router.push(`/workflow/${createdWorkflowId}`);
     }
   };
 
@@ -120,47 +87,16 @@ export default function CreateWorkflowModal({
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 relative">
-          {loading && (
+          {createdWorkflowId ? (
             <div className="absolute inset-0 z-10 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-8">
-              <div className="w-16 h-16 bg-blue-900/30 rounded-full flex items-center justify-center mb-6 border border-blue-500/20 shadow-[0_0_30px_rgba(59,130,246,0.2)] relative">
-                <Wand2 className="w-8 h-8 text-blue-400 animate-pulse" />
-                <div className="absolute inset-0 border-t-2 border-blue-500 rounded-full animate-spin" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-8">Forging Your Specification</h3>
-              
-              <div className="w-full max-w-sm space-y-3">
-                {[
-                  { id: "initializing", label: "Initializing Workflow" },
-                  { id: "analyzing", label: "Analyzing Input Context" },
-                  { id: "extracting", label: "Extracting Core Requirements" },
-                  { id: "structuring", label: "Structuring Document" },
-                ].map((step) => {
-                  const stateOrder = ["idle", "initializing", "analyzing", "extracting", "structuring"];
-                  const currentIndex = stateOrder.indexOf(loadingState);
-                  const stepIndex = stateOrder.indexOf(step.id);
-                  const isPast = currentIndex > stepIndex;
-                  const isCurrent = currentIndex === stepIndex;
-                  
-                  return (
-                    <div key={step.id} className={`flex items-center gap-4 p-3 rounded-xl transition-all duration-500 ${isCurrent ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm translate-x-2' : 'border border-transparent'}`}>
-                       <div className="shrink-0 w-6 h-6 flex items-center justify-center">
-                         {isPast ? (
-                           <CheckCircle2 className="w-5 h-5 text-green-500" />
-                         ) : isCurrent ? (
-                           <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
-                         ) : (
-                           <div className="w-2 h-2 rounded-full bg-slate-700" />
-                         )}
-                       </div>
-                       <span className={`font-medium ${isPast ? 'text-slate-300' : isCurrent ? 'text-blue-400 font-bold' : 'text-slate-600'}`}>
-                         {step.label}
-                       </span>
-                    </div>
-                  )
-                })}
-              </div>
+              <ProgressRail 
+                workflowId={createdWorkflowId} 
+                intakeData={{ rawIdea, audience, goal, outOfScope, constraints, targetTool }}
+                onComplete={handlePipelineComplete}
+                onError={(msg) => setError(msg)}
+              />
             </div>
-          )}
+          ) : null}
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg border border-red-100 dark:border-red-900/50 text-sm font-medium flex items-center gap-2">
@@ -199,23 +135,26 @@ export default function CreateWorkflowModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">Who is this for?</label>
-                  <input
-                    type="text"
-                    value={audience}
-                    onChange={(e) => setAudience(e.target.value)}
-                    placeholder="e.g., Internal ops team"
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-950 text-sm transition-shadow"
-                  />
+                    <input 
+                      type="text" 
+                      value={featureName}
+                      onChange={(e) => setFeatureName(e.target.value)}
+                      placeholder="e.g. User Authentication System"
+                      className="w-full bg-transparent border-0 outline-none text-slate-900 dark:text-white placeholder:text-slate-400 font-medium"
+                      disabled={createdWorkflowId !== null}
+                      required
+                    />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">Main outcome?</label>
-                  <input
-                    type="text"
-                    value={goal}
-                    onChange={(e) => setGoal(e.target.value)}
-                    placeholder="e.g., Reduce manual data entry"
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-950 text-sm transition-shadow"
-                  />
+                  <textarea 
+                      value={rawIdea}
+                      onChange={(e) => setRawIdea(e.target.value)}
+                      placeholder="Describe your feature idea... What does it do? Why are you building it?"
+                      className="w-full bg-transparent border-0 outline-none text-slate-900 dark:text-white placeholder:text-slate-400 font-medium min-h-[100px] resize-y"
+                      disabled={createdWorkflowId !== null}
+                      required
+                    />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">Out of scope?</label>
@@ -265,22 +204,21 @@ export default function CreateWorkflowModal({
               type="button"
               onClick={onClose}
               className="px-5 py-2.5 text-sm font-semibold glass text-slate-300 border-white/10 rounded-lg hover:bg-white/5 transition-colors shadow-sm"
-              disabled={loading}
             >
               Cancel
             </button>
             <button
-              type="submit"
-              form="create-wf-form"
-              disabled={loading}
-              className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 transition-all shadow-sm hover:shadow"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
+            type="submit"
+            form="create-wf-form"
+            disabled={!featureName.trim() || !rawIdea.trim() || createdWorkflowId !== null}
+            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 text-white rounded-xl font-medium transition-all shadow-lg shadow-blue-500/20"
+          >
+            {createdWorkflowId !== null ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Initializing...
+              </>
+            ) : (
                 "Generate Spec"
               )}
             </button>

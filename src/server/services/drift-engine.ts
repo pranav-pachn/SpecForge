@@ -351,7 +351,7 @@ async function markImpactedArtifacts(
           entityType: "PLAN",
           entityId: planArtifact.id,
           description: `Specification changed. The implementation plan needs to be updated.`,
-          resolved: false
+          status: "OPEN"
         }
       });
     }
@@ -367,7 +367,7 @@ async function markImpactedArtifacts(
           entityType: "TASK",
           entityId: node.id,
           description: `Upstream specification for this task changed.`,
-          resolved: false
+          status: "OPEN"
         }
       });
     } else if (node.type === "execution_pack") {
@@ -378,7 +378,7 @@ async function markImpactedArtifacts(
           entityType: "PACK",
           entityId: node.id,
           description: `Upstream specification for this execution pack changed.`,
-          resolved: false
+          status: "OPEN"
         }
       });
     }
@@ -459,7 +459,7 @@ export async function handleArtifactDrift(
           entityType: "VALIDATION",
           entityId: v.id,
           description: "Specification was updated. This validation report may be stale.",
-          resolved: false
+          status: "OPEN"
         }
       });
     }

@@ -34,8 +34,9 @@ export const WORKFLOW_STATUS_COLORS: Record<WorkflowStatus, string> = {
 };
 
 export const ARTIFACT_TYPE_LABELS: Record<ArtifactType, string> = {
-  SPEC: "Specification",
+  SPEC: "Product Specification",
   PLAN: "Implementation Plan",
+  ARCHITECTURE: "System Architecture",
   TASK_BREAKDOWN: "Task Breakdown",
   EXECUTION_PACK: "Execution Pack",
 };

@@ -1,34 +1,10 @@
 import { db } from "@/lib/db";
 import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
-import { gateway } from "@/lib/ai/gateway/gateway";
+import { SpecificationReviewAgent } from "@/lib/ai/agents/SpecificationReviewAgent";
 import { ReviewCheckType, CheckStatus } from "@prisma/client";
+import { WorkflowContext } from "@/lib/ai/engine/WorkflowContext";
 
-const REVIEW_GATE_PROMPT = `
-You are a Staff Software Engineer reviewing a feature specification. You need to act as a strict gatekeeper before this spec is allowed to proceed to the Planning and Task Breakdown phase.
-
-Evaluate the specification strictly against these 4 criteria:
-1. REQUIREMENT_COVERAGE: Are all user stories and functional requirements clearly covered?
-2. TEST_COVERAGE: Are the functional requirements testable? (Look for clear Acceptance Criteria).
-3. ASSUMPTION_RISK: Are technical constraints, external dependencies, edge cases, and risks explicitly named?
-4. CONSISTENCY: Is the spec consistent internally? Are success metrics clearly defined?
-
-Respond with a JSON object containing an array of 'checks'. Each check must have:
-- "type": One of ["REQUIREMENT_COVERAGE", "TEST_COVERAGE", "ASSUMPTION_RISK", "CONSISTENCY"]
-- "status": "PASSED" or "FAILED"
-- "description": A short 1-2 sentence explanation of your verdict.
-
-Example response:
-{
-  "checks": [
-    {
-      "type": "TEST_COVERAGE",
-      "status": "FAILED",
-      "description": "Acceptance criteria exist but lack specific edge-case assertions."
-    }
-  ]
-}
-`;
 
 export async function POST(req: NextRequest) {
   const user = await getAuthenticatedUser();
@@ -41,19 +17,17 @@ export async function POST(req: NextRequest) {
       return apiError("versionId and specContent are required", 400);
     }
 
-    const { text } = await gateway.execute({
-      capability: "review_gate",
-      system: REVIEW_GATE_PROMPT,
-      prompt: `Analyze this specification:\n\n${specContent}`,
-    });
+    const agent = new SpecificationReviewAgent();
+    // Create a mock context for the agent
+    const ctx: WorkflowContext = {
+      input: { workflowId: "mock", userId: user.id, rawIdea: "" },
+      artifacts: {
+        specification: { markdown: specContent, requirements: [] } as any
+      },
+      execution: { startedAt: new Date(), stages: [] }
+    };
 
-    let result;
-    try {
-      const jsonStr = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
-      result = JSON.parse(jsonStr);
-    } catch (e) {
-      return apiError("AI generated invalid response format", 500);
-    }
+    const result = await agent.execute(ctx);
 
     // Save checks to DB
     await db.$transaction(async (tx) => {

@@ -20,6 +20,13 @@ import ReviewTab from "@/features/workflows/components/workflow-tabs/ReviewTab";
 import ValidateTab from "@/features/workflows/components/workflow-tabs/ValidateTab";
 import DriftTab from "@/features/workflows/components/workflow-tabs/DriftTab";
 import EngineeringReviewTab from "@/features/workflows/components/workflow-tabs/EngineeringReviewTab";
+import ArchitectureTab from "@/features/workflows/components/workflow-tabs/ArchitectureTab";
+import KnowledgeTab from "@/features/workflows/components/workflow-tabs/KnowledgeTab";
+import MemoryTab from "@/features/workflows/components/workflow-tabs/MemoryTab";
+import { GraphTab } from "@/features/workflows/components/workflow-tabs/GraphTab";
+import { TraceabilityTab } from "@/features/workflows/components/workflow-tabs/TraceabilityTab";
+import DriftAlerts from "@/features/workflows/components/workflow-tabs/DriftAlerts";
+import { CopilotWidget } from "@/features/workflows/components/workflow-tabs/CopilotWidget";
 
 const STATUS_TO_TAB: Record<WorkflowStatus, TabId> = {
   DRAFT: "spec",
@@ -92,25 +99,7 @@ export default function WorkflowPage() {
         <ArrowLeft className="w-4 h-4" /> Back to Dashboard
       </Link>
 
-      {unresolvedDrift && activeTab !== "drift" && (
-        <div className="mb-6 glass-panel border-orange-500/30 bg-orange-950/20 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-[0_0_20px_rgba(249,115,22,0.15)] animate-in">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 border border-orange-500/30">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-orange-400 text-glow">Specification Updated</h3>
-              <p className="text-xs text-slate-300 mt-0.5">Some artifacts are now stale. Review the impact analysis to regenerate them.</p>
-            </div>
-          </div>
-          <button 
-            onClick={() => setActiveTab("drift")}
-            className="px-4 py-1.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 text-sm font-bold rounded-lg border border-orange-500/30 transition-all shadow-sm hover:shadow-[0_0_15px_rgba(249,115,22,0.3)]"
-          >
-            Review Changes
-          </button>
-        </div>
-      )}
+      <DriftAlerts workflowId={workflow.id} />
 
       <div className="mb-12">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
@@ -176,7 +165,12 @@ export default function WorkflowPage() {
         <div className="mt-6">
           {activeTab === "spec" && <SpecTab workflowId={workflow.id} artifact={specArtifact} onMutate={refreshWorkflow} onNext={() => setActiveTab("clarify")} />}
           {activeTab === "clarify" && <ClarifyTab workflowId={workflow.id} onMutate={refreshWorkflow} onRegenerateComplete={() => setActiveTab("spec")} onNext={() => setActiveTab("review")} />}
-          {activeTab === "plan" && <PlanTab workflowId={workflow.id} specArtifact={specArtifact} planArtifact={workflow.artifacts?.find((a: any) => a.type === "PLAN")} onMutate={refreshWorkflow} onNext={() => setActiveTab("tasks")} />}
+          {activeTab === "plan" && <PlanTab workflowId={workflow.id} specArtifact={specArtifact} planArtifact={workflow.artifacts?.find((a: any) => a.type === "PLAN")} onMutate={refreshWorkflow} onNext={() => setActiveTab("architecture")} />}
+          {activeTab === "architecture" && <ArchitectureTab workflowId={workflow.id} onMutate={refreshWorkflow} />}
+          {activeTab === "knowledge" && <KnowledgeTab workflowId={workflow.id} />}
+          {activeTab === "memory" && <MemoryTab workflowId={workflow.id} />}
+          {activeTab === "graph" && <GraphTab workflowId={workflow.id} />}
+          {activeTab === "traceability" && <TraceabilityTab workflowId={workflow.id} />}
           {activeTab === "tasks" && <TasksTab workflowId={workflow.id} onMutate={refreshWorkflow} onNext={() => setActiveTab("execute")} />}
           {activeTab === "execute" && <ExecuteTab workflowId={workflow.id} onMutate={refreshWorkflow} onNext={() => setActiveTab("engineering_review")} />}
           {activeTab === "engineering_review" && <EngineeringReviewTab workflowId={workflow.id} onMutate={refreshWorkflow} onNext={() => setActiveTab("review")} />}
@@ -185,6 +179,9 @@ export default function WorkflowPage() {
           {activeTab === "drift" && <DriftTab workflowId={workflow.id} workflowStatus={workflow.status} onMutate={refreshWorkflow} />}
         </div>
       </div>
+
+      {/* Floating Copilot Widget */}
+      <CopilotWidget workflowId={workflow.id} />
 
       {/* AI Activity Widget (Premium UX Mock) */}
       <div className="fixed bottom-6 right-6 z-40 animate-in fade-in slide-in-from-bottom-4">

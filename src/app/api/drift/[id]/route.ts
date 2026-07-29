@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { NextRequest } from "next/server";
+import { DriftEventStatus } from "@prisma/client";
 
 export async function PATCH(
   req: NextRequest,
@@ -10,7 +11,7 @@ export async function PATCH(
   if (!user) return apiError("Unauthorized", 401);
 
   try {
-    const { resolved } = await req.json();
+    const { status } = await req.json();
 
     const driftEvent = await db.driftEvent.findUnique({
       where: { id: params.id },
@@ -22,7 +23,7 @@ export async function PATCH(
 
     const updated = await db.driftEvent.update({
       where: { id: params.id },
-      data: { resolved },
+      data: { status: status as DriftEventStatus },
     });
 
     return jsonResponse(updated);
