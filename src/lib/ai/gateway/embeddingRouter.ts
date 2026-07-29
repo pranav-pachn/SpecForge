@@ -1,6 +1,7 @@
 import { embed, embedMany, EmbeddingModel } from "ai";
 import { gemini } from "../providers/gemini";
 import { cohere } from "@ai-sdk/cohere";
+import { openai } from "@ai-sdk/openai";
 import { healthTracker } from "./health";
 import { withRetry } from "./retry";
 
@@ -25,8 +26,6 @@ function resolveEmbeddingProvider(route: EmbeddingRoute): EmbeddingModel {
     case "cohere":
       return cohere.embedding(route.model);
     case "openai":
-      // Fallback require openai dynamically to avoid circular/unnecessary deps if unused
-      const { openai } = require("@ai-sdk/openai");
       return openai.embedding(route.model);
     default:
       throw new Error(`Unknown embedding provider: ${route.provider}`);
