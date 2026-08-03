@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { IntelligenceEventBus } from "../events/EventBus";
+import { PlatformEventBus } from "@/enterprise/events/PlatformEventBus";
 import { NodeType, EdgeType, NodeStatus } from "./NodeTypes";
 
 export class GraphBuilder {
@@ -38,8 +38,9 @@ export class GraphBuilder {
         }
       });
       
-      IntelligenceEventBus.emit("NODE_CREATED", {
+      PlatformEventBus.emit("NODE_CREATED", {
         workflowId,
+        entityType: "GRAPH_NODE",
         timestamp: new Date(),
         node: {
           id: knode.id,
@@ -81,7 +82,11 @@ export class GraphBuilder {
                   relationType: "derived_from"
                 }
               });
-              IntelligenceEventBus.emit("EDGE_CREATED", { workflowId, timestamp: new Date() });
+              await PlatformEventBus.emit("EDGE_CREATED", {
+                workflowId,
+                entityType: "GRAPH_EDGE",
+                timestamp: new Date()
+              });
             }
           }
         }

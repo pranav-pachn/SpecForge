@@ -18,14 +18,18 @@ async function main() {
     },
   });
 
-  // 2. Create workspace & project
-  const workspace = await prisma.workspace.create({
+  // 2. Create org & project
+  const orgName = 'Acme Corp';
+  const org = await prisma.organization.create({
     data: {
-      name: 'Acme Corp',
+      name: orgName,
+      slug: orgName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.random().toString(36).substring(2, 6),
+      ownerId: demoUser.id,
+      plan: "ENTERPRISE",
       members: {
         create: {
           userId: demoUser.id,
-          role: 'ADMIN',
+          role: 'OWNER',
         },
       },
     },
@@ -35,7 +39,7 @@ async function main() {
     data: {
       name: 'Applicant Tracking System',
       description: 'Internal ATS for hiring pipeline',
-      workspaceId: workspace.id,
+      organizationId: org.id,
     },
   });
 

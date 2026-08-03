@@ -3,8 +3,8 @@ import { Prisma } from "@prisma/client";
 // Prisma-generated types
 export type {
   User,
-  Workspace,
-  WorkspaceMember,
+  Organization,
+  OrgMember,
   Project,
   Workflow,
   Artifact,

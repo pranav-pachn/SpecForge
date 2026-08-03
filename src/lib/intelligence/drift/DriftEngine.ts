@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { IntelligenceEventBus } from "../events/EventBus";
+import { PlatformEventBus } from "@/enterprise/events/PlatformEventBus";
 import { ImpactPredictor } from "../impact/ImpactPredictor";
 import { GraphNode } from "../graph/NodeTypes";
 import { DriftEventStatus } from "@prisma/client";
@@ -10,8 +10,9 @@ export class DriftEngine {
    * Initializes the Drift Engine to listen for graph changes.
    */
   static initialize() {
-    IntelligenceEventBus.subscribe("NODE_UPDATED", async (payload) => {
+    PlatformEventBus.subscribe("NODE_UPDATED", async (payload) => {
       if (payload.node) {
+        if (!payload.workflowId) throw new Error("Missing workflowId");
         await this.handleNodeUpdate(payload.workflowId, payload.node);
       }
     });
@@ -56,8 +57,9 @@ export class DriftEngine {
           }
         });
         
-        IntelligenceEventBus.emit("DRIFT_DETECTED", {
+        await PlatformEventBus.emit("DRIFT_DETECTED", {
           workflowId,
+          entityType: "DRIFT_ANALYSIS",
           timestamp: new Date(),
           metadata: { affectedNodeId: affected.node.id }
         });

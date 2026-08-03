@@ -33,6 +33,7 @@ const STATUS_TO_TAB: Record<WorkflowStatus, TabId> = {
   CLARIFYING: "clarify",
   SPEC_REVIEW: "review",
   PLANNING: "plan",
+  WAITING_FOR_APPROVAL: "plan",
   TASK_BREAKDOWN: "tasks",
   EXECUTING: "execute",
   ENGINEERING_REVIEW: "engineering_review",

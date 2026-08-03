@@ -13,6 +13,29 @@ enum ApprovalPolicy {
   ALL
 }
 
+enum OrgPlan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum TeamRole {
+  LEAD
+  MEMBER
+}
+
+enum ProjectRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
 model User {
   id            String            @id @default(cuid())
   email         String            @unique
@@ -25,7 +48,15 @@ model User {
   accounts      Account[]
   sessions      Session[]
   workflows     Workflow[]
-  workspaces    WorkspaceMember[]
+  ownedOrganizations Organization[] @relation("OrgOwner")
+  orgMemberships     OrgMember[]
+  teamMemberships    TeamMember[]
+  projectMemberships ProjectMember[]
+  comments           Comment[]
+  approvalVotes      ApprovalVote[]
+  notifications      Notification[]
+  notificationPrefs  NotificationPreference[]
+  auditLogs          AuditLog[]
 }
 
 model Account {
@@ -62,36 +93,145 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Workspace {
-  id        String            @id @default(cuid())
-  name      String
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-  projects  Project[]
-  members   WorkspaceMember[]
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  plan        OrgPlan  @default(FREE)
+  ownerId     String
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner       User     @relation("OrgOwner", fields: [ownerId], references: [id])
+  members     OrgMember[]
+  teams       Team[]
+  projects    Project[]
+  invitations Invitation[]
+  flags       CapabilityFlag[]
+  workflows   Workflow[]
+  tasks       Task[]
+  knowledgeNodes KnowledgeNode[]
+  policies    Policy[]
+  comments    Comment[]
+  approvalChains ApprovalChain[]
+  notificationChannels NotificationChannel[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
 }
 
-model WorkspaceMember {
-  id          String    @id @default(cuid())
-  userId      String
-  workspaceId String
-  role        String    @default("MEMBER")
-  createdAt   DateTime  @default(now())
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+model OrgMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  role           OrgRole      @default(MEMBER)
+  joinedAt       DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, workspaceId])
+  @@unique([organizationId, userId])
+}
+
+model Team {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members        TeamMember[]
+  workflows      Workflow[]
+}
+
+model TeamMember {
+  teamId    String
+  userId    String
+  role      TeamRole @default(MEMBER)
+  
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+}
+
+model Invitation {
+  id             String       @id @default(cuid())
+  organizationId String
+  email          String
+  role           OrgRole
+  token          String       @unique @default(cuid())
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model CapabilityFlag {
+  id             String       @id @default(cuid())
+  organizationId String
+  flag           String
+  enabled        Boolean      @default(false)
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, flag])
 }
 
 model Project {
   id          String     @id @default(cuid())
   name        String
   description String?
-  workspaceId String
+  organizationId String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   workflows   Workflow[]
+  members     ProjectMember[]
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  role      ProjectRole @default(VIEWER)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, userId])
+}
+
+model Policy {
+  id             String   @id @default(cuid())
+  organizationId String
+  entityType     String   // "ARCHITECTURE", "MEMORY_DECISION", "SPECIFICATION"
+  trigger        String   // "ON_CREATE" | "ON_APPROVE" | "ON_DRIFT"
+  requiredRoles  String[] // ["ARCHITECT", "SECURITY_LEAD"]
+  minApprovers   Int      @default(1)
+  autoApprove    Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Comment {
+  id             String   @id @default(cuid())
+  organizationId String
+  entityType     String   // "WORKFLOW", "ARTIFACT", "TASK", "REVIEW"
+  entityId       String
+  userId         String
+  content        String
+  parentId       String?  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent         Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        Comment[] @relation("CommentReplies")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@index([entityType, entityId])
 }
 
 model Workflow {
@@ -112,6 +252,10 @@ model Workflow {
   engineeringMemories EngineeringMemory[]
   creator            User                @relation(fields: [creatorId], references: [id])
   project            Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  organizationId     String?
+  organization       Organization?       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teamId             String?
+  team               Team?               @relation(fields: [teamId], references: [id], onDelete: SetNull)
 }
 
 model Artifact {
@@ -167,6 +311,8 @@ model ClarificationAnswer {
 
 model Task {
   id                 String            @id @default(cuid())
+  organizationId     String?
+  organization       Organization?     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   workflowId         String
   versionId          String
   title              String
@@ -364,6 +510,7 @@ enum WorkflowStatus {
   CLARIFYING
   SPEC_REVIEW
   PLANNING
+  WAITING_FOR_APPROVAL
   TASK_BREAKDOWN
   EXECUTING
   REVIEWING
@@ -443,6 +590,8 @@ enum EventType {
 
 model KnowledgeNode {
   id              String   @id @default(cuid())
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   workflowId      String
   type            String   // "requirement" | "architecture" | "decision" | "review" | "validation" | "task"
   artifactId      String?  
@@ -479,6 +628,7 @@ model KnowledgeRelationship {
 model EngineeringMemory {
   id                 String               @id @default(cuid())
   decisionId         String               @unique // e.g., DEC-001
+  organizationId     String?
   workflowId         String
   memoryType         MemoryType
   status             MemoryStatus         @default(ACTIVE)
@@ -560,4 +710,148 @@ enum MemoryCreatedBy {
   USER
   AI_DECISION
   SYSTEM
+}
+
+// -----------------------------------------
+// Sprint E3: Approval Engine & Notifications
+// -----------------------------------------
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ApprovalStrategy {
+  FIXED_COUNT
+  PERCENTAGE
+  ALL
+  ANY
+  CUSTOM
+}
+
+model ApprovalChain {
+  id             String         @id @default(cuid())
+  organizationId String
+  name           String         // "Architecture Approval", "Security Review"
+  entityType     String
+  steps          ApprovalStep[]
+  requests       ApprovalRequest[]
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model ApprovalStep {
+  id               String         @id @default(cuid())
+  chainId          String
+  stepOrder        Int            // 1, 2, 3...
+  parallelGroup    String         // E.g., "A", "B". Steps in the same group execute concurrently
+  requiredRole     String         // "ARCHITECT", "SECURITY_LEAD", "OWNER"
+  minApprovers     Int            @default(1)
+  approvalStrategy ApprovalStrategy @default(FIXED_COUNT)
+  chain            ApprovalChain  @relation(fields: [chainId], references: [id], onDelete: Cascade)
+}
+
+model ApprovalRequest {
+  id           String         @id @default(cuid())
+  chainId      String?
+  entityId     String
+  currentStep  Int            @default(1)
+  status       ApprovalStatus @default(PENDING)
+  requestedBy  String
+  createdAt    DateTime       @default(now())
+  resolvedAt   DateTime?
+  votes        ApprovalVote[]
+  chain        ApprovalChain? @relation(fields: [chainId], references: [id], onDelete: SetNull)
+}
+
+model ApprovalVote {
+  id           String          @id @default(cuid())
+  requestId    String
+  userId       String
+  status       ApprovalStatus  // APPROVED, REJECTED
+  comment      String?
+  step         Int             // Which step this vote applies to
+  createdAt    DateTime        @default(now())
+  request      ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, step, userId])
+}
+
+model NotificationChannel {
+  id               String         @id @default(cuid())
+  organizationId   String
+  channelType      String         // "IN_APP" | "EMAIL" | "SLACK" | "TEAMS" | "WEBHOOK"
+  config           Json           // { webhookUrl, channel }
+  encryptedFields  String[]       // ["webhookUrl"]
+  enabled          Boolean        @default(true)
+  organization     Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id               String         @id @default(cuid())
+  userId           String
+  orgId            String
+  event            String         // Domain event vocabulary
+  title            String
+  body             String?
+  entityId         String?
+  channel          String         @default("IN_APP")
+  read             Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization     Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  deliveryAttempts NotificationDelivery[]
+}
+
+model NotificationDelivery {
+  id               String         @id @default(cuid())
+  notificationId   String
+  channelType      String         // "SLACK", "EMAIL"
+  status           String         // "SUCCESS", "FAILED", "RETRYING"
+  error            String?
+  attemptedAt      DateTime       @default(now())
+  
+  notification     Notification   @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+}
+
+model NotificationPreference {
+  id               String         @id @default(cuid())
+  userId           String
+  channelType      String         // "IN_APP", "SLACK", "EMAIL"
+  enabled          Boolean        @default(true)
+  
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channelType])
+}
+
+// -----------------------------------------
+// Sprint E4: Audit Logs & Activity Feed
+// -----------------------------------------
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String?      
+  eventType      String       // E.g., "WORKFLOW_CREATED" (PlatformEventType)
+  entityType     String       // E.g., "WORKFLOW", "APPROVAL_REQUEST"
+  entityId       String?
+  correlationId  String       
+  causationId    String?
+  source         String       @default("SYSTEM") // E.g., "UI", "API", "SYSTEM"
+  payload        Json         // Sanitized event metadata
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([createdAt])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([userId])
+  @@index([correlationId])
 }

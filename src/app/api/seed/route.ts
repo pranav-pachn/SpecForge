@@ -20,32 +20,36 @@ export async function POST() {
       });
     }
 
-    // Create workspace if not exists
-    let workspaceMember = await prisma.workspaceMember.findFirst({
+    // Create organization if not exists
+    let orgMember = await prisma.orgMember.findFirst({
       where: { userId: demoUser.id },
-      include: { workspace: true }
+      include: { organization: true }
     });
 
-    let workspace;
-    if (!workspaceMember) {
-      workspace = await prisma.workspace.create({
+    let org;
+    if (!orgMember) {
+      const orgName = "Acme Corp Demo";
+      org = await prisma.organization.create({
         data: {
-          name: "Acme Corp Demo",
+          name: orgName,
+          slug: orgName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.random().toString(36).substring(2, 6),
+          ownerId: demoUser.id,
+          plan: "PRO",
           members: {
             create: {
               userId: demoUser.id,
-              role: "ADMIN"
+              role: "OWNER"
             }
           }
         }
       });
     } else {
-      workspace = workspaceMember.workspace;
+      org = orgMember.organization;
     }
 
     // Create a demo project
     let project = await prisma.project.findFirst({
-      where: { workspaceId: workspace.id, name: "SaaS Dashboard Redesign" }
+      where: { organizationId: org.id, name: "SaaS Dashboard Redesign" }
     });
 
     if (!project) {
@@ -53,7 +57,7 @@ export async function POST() {
         data: {
           name: "SaaS Dashboard Redesign",
           description: "A complete overhaul of the analytics dashboard.",
-          workspaceId: workspace.id,
+          organizationId: org.id,
         }
       });
     }

@@ -38,17 +38,19 @@ export async function POST(req: Request) {
         },
       });
 
-      const workspace = await tx.workspace.create({
+      const orgName = `${name || email.split("@")[0]}'s Organization`;
+      const org = await tx.organization.create({
         data: {
-          name: `${name || email.split("@")[0]}'s Workspace`,
-        },
-      });
-
-      await tx.workspaceMember.create({
-        data: {
-          userId: newUser.id,
-          workspaceId: workspace.id,
-          role: "ADMIN",
+          name: orgName,
+          slug: orgName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.random().toString(36).substring(2, 6),
+          ownerId: newUser.id,
+          plan: "FREE",
+          members: {
+            create: {
+              userId: newUser.id,
+              role: "OWNER"
+            }
+          }
         },
       });
 
@@ -56,7 +58,7 @@ export async function POST(req: Request) {
         data: {
           name: "Default Project",
           description: "Your first project",
-          workspaceId: workspace.id,
+          organizationId: org.id,
         },
       });
 

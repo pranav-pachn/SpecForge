@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
 import { WorkflowStatus, ArtifactType, ArtifactVersionStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
-import { logEvent } from "@/lib/instrumentation";
+import { WorkflowApplicationService } from "@/application/WorkflowApplicationService";
 
 export async function GET(req: NextRequest) {
   const user = await getAuthenticatedUser();
@@ -49,21 +49,27 @@ export async function POST(req: NextRequest) {
 
     // Default to user's first project if none provided
     let targetProjectId = projectId;
+    let targetOrgId = null;
+
     if (!targetProjectId) {
-      const workspaceMember = await db.workspaceMember.findFirst({
+      const orgMember = await db.orgMember.findFirst({
         where: { userId: user.id },
-        include: { workspace: { include: { projects: true } } },
+        include: { organization: { include: { projects: true } } },
       });
 
-      if (!workspaceMember?.workspace.projects[0]) {
-        // Automatically create a workspace and project if the user doesn't have one (e.g., from Google Login)
-        const newWorkspace = await db.workspace.create({
+      if (!orgMember?.organization.projects[0]) {
+        // Automatically create an org and project if the user doesn't have one
+        const orgName = `${user.name || user.email?.split("@")[0] || 'User'}'s Organization`;
+        const newOrg = await db.organization.create({
           data: {
-            name: `${user.name || user.email?.split("@")[0] || 'User'}'s Workspace`,
+            name: orgName,
+            slug: orgName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.random().toString(36).substring(2, 6),
+            ownerId: user.id,
+            plan: "FREE",
             members: {
               create: {
                 userId: user.id,
-                role: "ADMIN",
+                role: "OWNER",
               },
             },
             projects: {
@@ -75,50 +81,28 @@ export async function POST(req: NextRequest) {
           },
           include: { projects: true },
         });
-        targetProjectId = newWorkspace.projects[0].id;
+        targetProjectId = newOrg.projects[0].id;
+        targetOrgId = newOrg.id;
       } else {
-        targetProjectId = workspaceMember.workspace.projects[0].id;
+        targetProjectId = orgMember.organization.projects[0].id;
+        targetOrgId = orgMember.organization.id;
       }
+    } else {
+      const proj = await db.project.findUnique({ where: { id: targetProjectId } });
+      if (!proj || !proj.organizationId) return apiError("Invalid project");
+      targetOrgId = proj.organizationId;
     }
 
-    // Create workflow and its first SPEC artifact draft in a transaction
-    const workflow = await db.$transaction(async (tx) => {
-      const newWorkflow = await tx.workflow.create({
-        data: {
-          name,
-          projectId: targetProjectId,
-          creatorId: user.id,
-          status: WorkflowStatus.DRAFT,
-        },
-      });
-
-      await tx.artifact.create({
-        data: {
-          workflowId: newWorkflow.id,
-          type: ArtifactType.SPEC,
-          title: "Feature Specification",
-          versions: {
-            create: {
-              version: 1,
-              content: "",
-              status: ArtifactVersionStatus.DRAFT,
-            },
-          },
-        },
-      });
-
-      return newWorkflow;
-    });
-
-    // Log the event without awaiting
-    logEvent("WORKFLOW_CREATED", { 
-      workflowId: workflow.id, 
-      userId: user.id,
-      metadata: { name }
-    });
+    const workflow = await WorkflowApplicationService.createWorkflow(
+      targetOrgId,
+      targetProjectId,
+      name,
+      user.id
+    );
 
     return jsonResponse(workflow, 201);
-  } catch (error) {
-    return apiError("Failed to create workflow", 500);
+  } catch (error: any) {
+    console.error(error);
+    return apiError(error.message || "Failed to create workflow", 500);
   }
 }

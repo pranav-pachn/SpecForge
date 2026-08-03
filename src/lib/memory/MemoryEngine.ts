@@ -1,7 +1,7 @@
 import { DecisionDetector } from "./DecisionDetector";
 import { DecisionGenerator } from "./DecisionGenerator";
 import { MemoryStore } from "./MemoryStore";
-import { IntelligenceEventBus } from "../intelligence/events/EventBus";
+import { PlatformEventBus } from "@/enterprise/events/PlatformEventBus";
 import { GraphService } from "../intelligence/graph/GraphService";
 import { IntelligenceFacade } from "../intelligence/IntelligenceFacade";
 import { db } from "../db";
@@ -70,8 +70,9 @@ export class MemoryEngine {
       if (status === "ACTIVE") {
         const node = await GraphService.getNode(memory.id);
         if (node) {
-          IntelligenceEventBus.emit("NODE_UPDATED", {
+          PlatformEventBus.emit("NODE_UPDATED", {
             workflowId,
+            entityType: "GRAPH_NODE",
             timestamp: new Date(),
             node
           });

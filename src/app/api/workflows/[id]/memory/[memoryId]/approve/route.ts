@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { IntelligenceEventBus } from "@/lib/intelligence/events/EventBus";
+import { PlatformEventBus } from "@/enterprise/events/PlatformEventBus";
 import { GraphService } from "@/lib/intelligence/graph/GraphService";
 import { IntelligenceFacade } from "@/lib/intelligence/IntelligenceFacade";
 export async function POST(
@@ -40,8 +40,9 @@ export async function POST(
       // Trigger drift evaluation since it's now active
       const node = await GraphService.getNode(memory.id);
       if (node) {
-        IntelligenceEventBus.emit("NODE_UPDATED", {
-          workflowId: params.id,
+        PlatformEventBus.emit("NODE_UPDATED", {
+          workflowId: memory.workflowId,
+          entityType: "GRAPH_NODE",
           timestamp: new Date(),
           node: node
         });
