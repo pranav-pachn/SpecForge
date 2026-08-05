@@ -1,23 +1,20 @@
 import { db } from "@/platform/storage/db";
 import { WorkflowContext } from "../engine/WorkflowContext";
 import { EmbeddingQueue } from "@/context/embeddings/EmbeddingQueue";
-import { MemoryEngine } from '@/intelligence/memory/MemoryEngine';
+import { PlatformEventBus } from '@/platform/events/PlatformEventBus';
+import { EventFactory } from '@/platform/events/factory/EventFactory';
+import { EventPublisher } from '@/platform/events/dispatcher/EventPublisher';
 import { GraphBuilder } from '@/intelligence/graph/GraphBuilder';
 
-interface MemoryCaptureJob {
-  workflowId: string;
-  artifactType: string;
-  sourceVersionId: string;
-  oldContent: string | null;
-  newContent: string;
-}
 
-export async function persistPipelineArtifacts(ctx: WorkflowContext): Promise<void> {
-  const memoryJobs: MemoryCaptureJob[] = [];
+
+export async function persistPipelineArtifacts(ctx: WorkflowContext, publisher: EventPublisher = PlatformEventBus.getPublisher()): Promise<void> {
+  const eventsToPublish: any[] = [];
+  let specVersionId: string | null = null;
 
   await db.$transaction(async (tx) => {
     // 1. SPEC
-    let specVersionId: string | null = null;
+
     if (ctx.artifacts.specification) {
       const specContent = ctx.artifacts.specification.markdown;
       let specArtifact = await tx.artifact.findFirst({
@@ -55,13 +52,11 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext): Promise<vo
         specVersionId = v.id;
       }
 
-      memoryJobs.push({
-        workflowId: ctx.input.workflowId,
-        artifactType: "SPEC",
-        sourceVersionId: specVersionId,
-        oldContent: oldSpecContent,
-        newContent: specContent,
-      });
+      eventsToPublish.push(EventFactory.specificationCreated({
+        artifactId: specArtifact.id,
+        versionId: specVersionId as string,
+        content: specContent
+      }, { workflowId: ctx.input.workflowId, userId: ctx.input.userId }));
 
       // Build graph from structured object
       await GraphBuilder.buildFromArtifact(
@@ -120,13 +115,7 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext): Promise<vo
         planVersionId = v.id;
       }
 
-      memoryJobs.push({
-        workflowId: ctx.input.workflowId,
-        artifactType: "PLAN",
-        sourceVersionId: planVersionId,
-        oldContent: oldPlanContent,
-        newContent: planContent,
-      });
+      
 
       EmbeddingQueue.push({
         workflowId: ctx.input.workflowId,
@@ -177,13 +166,11 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext): Promise<vo
         archVersionId = v.id;
       }
 
-      memoryJobs.push({
-        workflowId: ctx.input.workflowId,
-        artifactType: "ARCHITECTURE",
-        sourceVersionId: archVersionId,
-        oldContent: oldArchContent,
-        newContent: archContent,
-      });
+      eventsToPublish.push(EventFactory.architectureGenerated({
+        artifactId: archArtifact.id,
+        versionId: archVersionId as string,
+        content: archContent
+      }, { workflowId: ctx.input.workflowId, userId: ctx.input.userId }));
 
       EmbeddingQueue.push({
         workflowId: ctx.input.workflowId,
@@ -273,13 +260,11 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext): Promise<vo
         taskVersionId = v.id;
       }
 
-      memoryJobs.push({
-        workflowId: ctx.input.workflowId,
-        artifactType: "TASKS",
-        sourceVersionId: taskVersionId,
-        oldContent: oldTaskContent,
-        newContent: taskContent,
-      });
+      eventsToPublish.push(EventFactory.tasksGenerated({
+        artifactId: breakdownArtifact.id,
+        versionId: taskVersionId as string,
+        content: taskContent
+      }, { workflowId: ctx.input.workflowId, userId: ctx.input.userId }));
 
       EmbeddingQueue.push({
         workflowId: ctx.input.workflowId,
@@ -330,13 +315,15 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext): Promise<vo
 
   // Execute Memory Jobs asynchronously (fire-and-forget)
   // This allows the workflow engine to proceed while LLMs analyze the decisions
-  for (const job of memoryJobs) {
-    MemoryEngine.captureDecision(
-      job.workflowId,
-      job.artifactType,
-      job.sourceVersionId,
-      job.oldContent,
-      job.newContent
-    ).catch(e => console.error("[MemoryEngine] Async capture failed:", e));
+  for (const event of eventsToPublish) {
+    publisher.publish(event).catch(e => console.error("[PlatformEventBus] Publish failed:", e));
+  }
+  
+  // Publish ReviewCompleted if review artifact exists
+  if (ctx.artifacts.review && specVersionId) { 
+    publisher.publish(EventFactory.reviewCompleted({
+      reviewId: "review-" + Date.now(), 
+      overallScore: ctx.artifacts.review.overallScore
+    }, { workflowId: ctx.input.workflowId, userId: ctx.input.userId })).catch(e => console.error("[PlatformEventBus] Publish failed:", e));
   }
 }

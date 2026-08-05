@@ -3,6 +3,13 @@ export type EventType =
   | 'AgentStarted' 
   | 'AgentCompleted' 
   | 'AgentFailed' 
+  | 'AgentCancelled'
+  | 'AgentPaused'
+  | 'AgentResumed'
+  | 'ApprovalRequested'
+  | 'RetryStarted'
+  | 'StreamStarted'
+  | 'StreamCompleted'
   | 'PipelineCompleted' 
   | 'PipelineFailed';
 

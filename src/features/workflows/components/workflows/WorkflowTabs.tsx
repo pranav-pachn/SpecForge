@@ -5,7 +5,7 @@ import { cn } from "@/shared/utils";
 import { useEffect, useRef } from "react";
 
 import { Brain, Network } from "lucide-react";
-export type TabId = 'spec' | 'clarify' | 'review' | 'plan' | 'architecture' | 'knowledge' | 'memory' | 'graph' | 'traceability' | 'tasks' | 'execute' | 'engineering_review' | 'validate' | 'drift';
+export type TabId = 'spec' | 'clarify' | 'review' | 'plan' | 'architecture' | 'knowledge' | 'memory' | 'graph' | 'traceability' | 'tasks' | 'execute' | 'engineering_review' | 'validate' | 'drift' | 'timeline';
 
 interface WorkflowTabsProps {
   activeTab: TabId;
@@ -13,7 +13,7 @@ interface WorkflowTabsProps {
   workflow?: any;
 }
 
-import { Database } from "lucide-react";
+import { Database, Clock } from "lucide-react";
 
 const TABS = [
   { id: 'spec', label: '① Spec', icon: FileText, number: 1 },
@@ -30,6 +30,7 @@ const TABS = [
   { id: 'engineering_review', label: '⑫ Eng Review', icon: Activity, number: 12 },
   { id: 'validate', label: '⑬ Validate', icon: ShieldCheck, number: 13 },
   { id: 'drift', label: '⑭ Drift', icon: Activity, number: 14 },
+  { id: 'timeline', label: '⑮ Timeline', icon: Clock, number: 15 },
 ] as const;
 
 export default function WorkflowTabs({ activeTab, onTabChange, workflow }: WorkflowTabsProps) {

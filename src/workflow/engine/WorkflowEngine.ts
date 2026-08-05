@@ -1,9 +1,24 @@
 import { EventBus } from './EventBus';
 import { PipelineDefinition } from './Pipeline';
-import { WorkflowContext, StageRecord } from './WorkflowContext';
+import { WorkflowContext } from './WorkflowContext';
+import { AgentRuntime } from '../../runtime/AgentRuntime';
+import { Scheduler } from '../../runtime/scheduler/Scheduler';
+import { AgentRequest } from '../../runtime/interfaces/AgentRequest';
+import { ExecutionContext } from '../../runtime/context/ExecutionContext';
+import { CancellationRegistry } from '../../runtime/cancellation/CancellationRegistry';
+import { RuntimeEventBridge } from '../../platform/events/bridge/RuntimeEventBridge';
 
 export class WorkflowEngine {
-  constructor(private eventBus: EventBus) {}
+  private runtime: AgentRuntime;
+  private scheduler: Scheduler;
+  private bridge: RuntimeEventBridge;
+
+  constructor(private eventBus: EventBus) {
+    this.runtime = new AgentRuntime(this.eventBus);
+    this.scheduler = new Scheduler();
+    this.bridge = new RuntimeEventBridge(this.eventBus);
+    this.bridge.start();
+  }
 
   async execute(pipeline: PipelineDefinition, ctx: WorkflowContext): Promise<WorkflowContext> {
     this.eventBus.emit({ 
@@ -12,65 +27,53 @@ export class WorkflowEngine {
       timestamp: new Date() 
     });
     
-    for (const agent of pipeline.steps) {
+    // We register the root cancellation token in the registry so the API can reach it
+    const cancellationToken = CancellationRegistry.getInstance().register(ctx.input.workflowId);
+    
+    const executionContext: ExecutionContext = {
+      workflowId: ctx.input.workflowId,
+      projectId: ctx.input.projectId || '',
+      userId: ctx.input.userId,
+      traceId: crypto.randomUUID(),
+      correlationId: crypto.randomUUID(),
+      artifacts: ctx.artifacts,
+      cancellationToken
+    };
+
+    const request: AgentRequest = {
+      workflowId: ctx.input.workflowId,
+      userId: ctx.input.userId,
+      payload: ctx.input // We pass the raw workflow input as the payload
+    };
+
+    // Use scheduler to get an execution graph (DAG)
+    const graph = this.scheduler.schedule(request, pipeline.steps);
+
+    try {
+      const state = await this.runtime.runGraph(graph, request, executionContext);
+      
+      if (state.status === 'FAILED' || state.status === 'TIMEOUT') {
+        throw new Error(`Pipeline execution ${state.status.toLowerCase()}`);
+      }
+      
       this.eventBus.emit({ 
-        type: 'AgentStarted', 
+        type: 'PipelineCompleted', 
         workflowId: ctx.input.workflowId, 
-        agent: agent.name, 
         timestamp: new Date() 
       });
       
-      const stageRecord: StageRecord = {
-        agent: agent.name,
-        status: 'running',
-        startedAt: new Date()
-      };
-      ctx.execution.stages.push(stageRecord);
-
-      try {
-        const output = await agent.execute(ctx);
-        // Safely write to artifacts
-        (ctx.artifacts as any)[agent.capability] = output;
-        
-        stageRecord.status = 'done';
-        stageRecord.completedAt = new Date();
-        stageRecord.latencyMs = stageRecord.completedAt.getTime() - stageRecord.startedAt!.getTime();
-        
-        this.eventBus.emit({ 
-          type: 'AgentCompleted', 
-          workflowId: ctx.input.workflowId, 
-          agent: agent.name, 
-          timestamp: new Date() 
-        });
-      } catch (err: any) {
-        stageRecord.status = 'failed';
-        stageRecord.error = err.message || 'Unknown error';
-        stageRecord.completedAt = new Date();
-        stageRecord.latencyMs = stageRecord.completedAt.getTime() - stageRecord.startedAt!.getTime();
-        
-        this.eventBus.emit({ 
-          type: 'AgentFailed', 
-          workflowId: ctx.input.workflowId, 
-          agent: agent.name, 
-          payload: err, 
-          timestamp: new Date() 
-        });
-        
-        this.eventBus.emit({ 
-          type: 'PipelineFailed', 
-          workflowId: ctx.input.workflowId, 
-          payload: err, 
-          timestamp: new Date() 
-        });
-        throw err;
-      }
+    } catch (err: any) {
+      this.eventBus.emit({ 
+        type: 'PipelineFailed', 
+        workflowId: ctx.input.workflowId, 
+        payload: err, 
+        timestamp: new Date() 
+      });
+      throw err;
+    } finally {
+      CancellationRegistry.getInstance().unregister(ctx.input.workflowId);
     }
     
-    this.eventBus.emit({ 
-      type: 'PipelineCompleted', 
-      workflowId: ctx.input.workflowId, 
-      timestamp: new Date() 
-    });
     return ctx;
   }
 }

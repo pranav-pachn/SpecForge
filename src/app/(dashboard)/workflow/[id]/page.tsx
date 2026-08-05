@@ -25,6 +25,7 @@ import KnowledgeTab from "@/features/workflows/components/workflow-tabs/Knowledg
 import MemoryTab from "@/features/workflows/components/workflow-tabs/MemoryTab";
 import { GraphTab } from "@/features/workflows/components/workflow-tabs/GraphTab";
 import { TraceabilityTab } from "@/features/workflows/components/workflow-tabs/TraceabilityTab";
+import { TimelineTab } from "@/features/workflows/components/workflow-tabs/TimelineTab";
 import DriftAlerts from "@/features/workflows/components/workflow-tabs/DriftAlerts";
 import { CopilotWidget } from "@/features/workflows/components/workflow-tabs/CopilotWidget";
 
@@ -178,6 +179,7 @@ export default function WorkflowPage() {
           {activeTab === "review" && <ReviewTab workflowId={workflow.id} onMutate={refreshWorkflow} onNext={() => setActiveTab("validate")} />}
           {activeTab === "validate" && <ValidateTab workflowId={workflow.id} onMutate={refreshWorkflow} onNext={() => setActiveTab("drift")} onEditSpec={() => setActiveTab("spec")} />}
           {activeTab === "drift" && <DriftTab workflowId={workflow.id} workflowStatus={workflow.status} onMutate={refreshWorkflow} />}
+          {activeTab === "timeline" && <TimelineTab workflowId={workflow.id} />}
         </div>
       </div>
 

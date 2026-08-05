@@ -3,6 +3,7 @@ import { WorkflowStatus, ArtifactType, ArtifactVersionStatus } from "@prisma/cli
 import { PermissionGuard } from '@/platform/governance/rbac/PermissionGuard';
 import { PlatformEventBus } from '@/platform/events/PlatformEventBus';
 import { PolicyEngine } from '@/platform/governance/policy/PolicyEngine';
+import { EventFactory } from '@/platform/events/factory/EventFactory';
 
 export class WorkflowApplicationService {
   
@@ -74,15 +75,11 @@ export class WorkflowApplicationService {
 
     // 4. Domain Event Emission (PlatformEventBus)
     // This replaces `logEvent` inline and routes to AuditLog, Analytics, and Intelligence
-    await PlatformEventBus.emit("WORKFLOW_CREATED", {
-      orgId: organizationId,
-      userId,
-      workflowId: workflow.id,
-      entityType: "WORKFLOW",
-      entityId: workflow.id,
-      timestamp: new Date(),
-      metadata: { name }
-    });
+    await PlatformEventBus.publish(EventFactory.workflowCreated({
+      organizationId,
+      name,
+      projectId
+    }, { workflowId: workflow.id, userId }));
 
     return workflow;
   }
