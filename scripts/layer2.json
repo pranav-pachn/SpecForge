@@ -1,0 +1,23 @@
+{
+  "moves": [
+    { "old": "lib/auth.ts", "new": "platform/auth/index.ts" },
+    { "old": "lib/db", "new": "platform/storage/db" },
+    { "old": "lib/logger.ts", "new": "platform/telemetry/logger.ts" },
+    { "old": "lib/analytics.ts", "new": "platform/telemetry/analytics.ts" },
+    { "old": "lib/instrumentation.ts", "new": "platform/telemetry/instrumentation.ts" },
+    { "old": "config/feature-flags.ts", "new": "platform/config/feature-flags.ts" },
+    { "old": "config/site.ts", "new": "platform/config/site.ts" },
+    { "old": "enterprise/events", "new": "platform/events" },
+    { "old": "enterprise/audit", "new": "platform/telemetry/audit" },
+    { "old": "enterprise/analytics", "new": "platform/telemetry/analytics-ext" },
+    { "old": "enterprise/billing", "new": "platform/billing" },
+    { "old": "enterprise/governance", "new": "platform/governance" },
+    { "old": "enterprise/integrations", "new": "platform/integrations" },
+    { "old": "enterprise/notifications", "new": "platform/notifications" },
+    { "old": "enterprise/organizations", "new": "platform/organizations" },
+    { "old": "enterprise/teams", "new": "platform/teams" },
+    { "old": "enterprise/templates", "new": "platform/templates" },
+    { "old": "enterprise/flags", "new": "platform/config/flags" },
+    { "old": "enterprise/comments", "new": "platform/comments" }
+  ]
+}

@@ -1,13 +1,13 @@
 import ReactMarkdown from "react-markdown";
-import { VERSION_STATUS_COLORS } from "@/lib/constants";
+import { VERSION_STATUS_COLORS } from "@/shared/constants";
 import { ArtifactVersionStatus } from "@prisma/client";
 import { Loader2, RefreshCw, CheckCircle2, Save, FileText, Sparkles, LayoutTemplate, History } from "lucide-react";
 import { useEffect, useState } from "react";
 import MonacoMarkdownEditor from "@/features/specs/components/editors/MonacoMarkdownEditor";
 import { formatDistanceToNow } from "date-fns";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { SkeletonText } from "@/components/ui/Skeleton";
-import { ExportMenu } from "@/components/ui/ExportMenu";
+import { EmptyState } from "@/shared/components/ui/EmptyState";
+import { SkeletonText } from "@/shared/components/ui/Skeleton";
+import { ExportMenu } from "@/shared/components/ui/ExportMenu";
 
 interface ArtifactPanelProps {
   title: string;

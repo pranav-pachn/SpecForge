@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FEATURE_FLAGS } from "@/config/feature-flags";
+import { FEATURE_FLAGS } from "@/platform/config/feature-flags";
 import { Database, Activity, ToggleLeft, RefreshCcw, Loader2, CheckCircle2 } from "lucide-react";
 
 export default function SettingsPage() {

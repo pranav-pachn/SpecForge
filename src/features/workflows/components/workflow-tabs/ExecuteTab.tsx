@@ -5,8 +5,8 @@ import { Loader2, Terminal, ArrowRight, ServerCrash, CheckCircle2 } from "lucide
 import { useRouter } from "next/navigation";
 import { ToolName } from "@prisma/client";
 import ExecutionPackCard from "@/features/workflows/components/workflows/ExecutionPackCard";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { SkeletonCard } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/shared/components/ui/EmptyState";
+import { SkeletonCard } from "@/shared/components/ui/Skeleton";
 import { toast } from "sonner";
 
 export default function ExecuteTab({ workflowId, onMutate, onNext }: { workflowId: string, onMutate?: () => void, onNext?: () => void }) {

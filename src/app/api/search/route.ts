@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { db as prisma } from "@/lib/db";
-import { getAuthenticatedUser } from "@/server/services/api-helpers";
+import { db as prisma } from "@/platform/storage/db";
+import { getAuthenticatedUser } from "@/infrastructure/services/api-helpers";
 
 export const dynamic = "force-dynamic";
 

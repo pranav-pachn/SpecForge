@@ -1,9 +1,9 @@
-import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
+import { db } from "@/platform/storage/db";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/infrastructure/services/api-helpers";
 import { NextRequest } from "next/server";
-import { SpecificationReviewAgent } from "@/lib/ai/agents/SpecificationReviewAgent";
+import { SpecificationReviewAgent } from "@/agents/SpecificationReviewAgent";
 import { ReviewCheckType, CheckStatus } from "@prisma/client";
-import { WorkflowContext } from "@/lib/ai/engine/WorkflowContext";
+import { WorkflowContext } from "@/workflow/engine/WorkflowContext";
 
 
 export async function POST(req: NextRequest) {

@@ -1,8 +1,8 @@
-import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
+import { db } from "@/platform/storage/db";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/infrastructure/services/api-helpers";
 import { NextRequest } from "next/server";
-import { gateway } from "@/lib/ai/gateway/gateway";
-import { PromptRegistry } from "@/lib/ai/prompts/registry";
+import { gateway } from "@/ai/gateway/gateway";
+import { PromptRegistry } from "@/ai/prompts/registry";
 import { ToolName } from "@prisma/client";
 
 export async function POST(req: NextRequest) {

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { PlatformEventBus } from "@/enterprise/events/PlatformEventBus";
-import { GraphService } from "@/lib/intelligence/graph/GraphService";
-import { IntelligenceFacade } from "@/lib/intelligence/IntelligenceFacade";
+import { db } from "@/platform/storage/db";
+import { PlatformEventBus } from "@/platform/events/PlatformEventBus";
+import { GraphService } from "@/intelligence/graph/GraphService";
+import { IntelligenceFacade } from "@/intelligence/IntelligenceFacade";
 export async function POST(
   request: Request,
   { params }: { params: { id: string; memoryId: string } }

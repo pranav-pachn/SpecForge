@@ -1,5 +1,5 @@
 import { FileText, CheckSquare, Settings2, GitBranch } from "lucide-react";
-import type { ImpactGraph, ImpactNode } from "@/server/services/drift-engine";
+import type { ImpactGraph, ImpactNode } from "@/infrastructure/services/drift-engine";
 
 interface ImpactGraphViewProps {
   graph: ImpactGraph;

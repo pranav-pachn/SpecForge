@@ -1,10 +1,10 @@
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
-import { db } from "@/lib/db";
-import { gateway } from "@/lib/ai/gateway/gateway";
-import { PromptRegistry } from "@/lib/ai/prompts/registry";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/infrastructure/services/api-helpers";
+import { db } from "@/platform/storage/db";
+import { gateway } from "@/ai/gateway/gateway";
+import { PromptRegistry } from "@/ai/prompts/registry";
 import { ArtifactVersionStatus, WorkflowStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
-import { logEvent } from "@/lib/instrumentation";
+import { logEvent } from "@/platform/telemetry/instrumentation";
 
 export const maxDuration = 60; // 60 seconds max duration for Vercel
 

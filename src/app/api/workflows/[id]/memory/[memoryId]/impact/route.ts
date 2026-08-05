@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { ImpactAnalyzer } from "@/lib/memory/ImpactAnalyzer";
-import { db } from "@/lib/db";
+import { ImpactAnalyzer } from "@/intelligence/memory/ImpactAnalyzer";
+import { db } from "@/platform/storage/db";
 
 export async function GET(
   request: Request,

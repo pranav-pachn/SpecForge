@@ -1,10 +1,10 @@
-import { Header } from "@/components/landing/Header";
-import { HeroSection } from "@/components/landing/HeroSection";
-import { ProductPreview } from "@/components/landing/ProductPreview";
-import { BenefitsSection } from "@/components/landing/BenefitsSection";
-import { BuiltForSection } from "@/components/landing/BuiltForSection";
-import { CTASection } from "@/components/landing/CTASection";
-import { Footer } from "@/components/landing/Footer";
+import { Header } from "@/shared/components/landing/Header";
+import { HeroSection } from "@/shared/components/landing/HeroSection";
+import { ProductPreview } from "@/shared/components/landing/ProductPreview";
+import { BenefitsSection } from "@/shared/components/landing/BenefitsSection";
+import { BuiltForSection } from "@/shared/components/landing/BuiltForSection";
+import { CTASection } from "@/shared/components/landing/CTASection";
+import { Footer } from "@/shared/components/landing/Footer";
 
 export default function Home() {
   return (

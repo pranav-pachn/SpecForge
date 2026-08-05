@@ -119,6 +119,9 @@ model Organization {
   notificationChannels NotificationChannel[]
   notifications Notification[]
   auditLogs     AuditLog[]
+  metricRollups MetricRollup[]
+  usageRecords  UsageRecord[]
+  templates     Template[]
 }
 
 model OrgMember {
@@ -143,6 +146,7 @@ model Team {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   members        TeamMember[]
   workflows      Workflow[]
+  metricRollups  MetricRollup[]
 }
 
 model TeamMember {
@@ -854,4 +858,76 @@ model AuditLog {
   @@index([entityId])
   @@index([userId])
   @@index([correlationId])
+}
+
+// -----------------------------------------
+// Sprint E5: Analytics & Engineering Maturity
+// -----------------------------------------
+
+enum RollupPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+model MetricRollup {
+  id              String       @id @default(cuid())
+  organizationId  String
+  teamId          String?      // Null means Org-wide rollup
+  period          RollupPeriod
+  date            DateTime     // Truncated to start of period
+
+  // Explicit columns instead of JSON
+  cycleTime       Float?       // In days
+  leadTime        Float?       // In days
+  driftResolution Float?       // In days
+  reviewScore     Int?         // 0-100
+  coverage        Int?         // 0-100 (from Test Coverage)
+  confidence      Int?         // 0-100 (from Decisions/AI confidence)
+  approvalHealth  Int?         // 0-100 (Percentage of quick/clean approvals)
+  maturityScore   Int?         // 0-100 (The grand formula)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  team            Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, teamId, period, date])
+}
+
+// -----------------------------------------
+// Sprint E6: Billing & Extensible Templates
+// -----------------------------------------
+
+model UsageRecord {
+  id             String       @id @default(cuid())
+  organizationId String
+  metric         String       // E.g., "workflows_created", "ai_tokens_used"
+  count          Int          @default(0)
+  periodStart    DateTime     // Start of billing cycle / month
+  periodEnd      DateTime     // End of billing cycle / month
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, metric, periodStart])
+  @@index([organizationId])
+}
+
+model Template {
+  id             String       @id @default(cuid())
+  organizationId String?      // Null = Global template
+  name           String
+  description    String?
+  version        Int          @default(1)
+  config         Json         // Validated schema (Stages, Policies, AI Agents)
+  isDeprecated   Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name, version]) // Organization can version their own
+  @@index([organizationId])
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import ArtifactPanel from "@/features/specs/components/ArtifactPanel";
 import { useRouter } from "next/navigation";
-import { useAutosave } from "@/hooks/useAutosave";
+import { useAutosave } from "@/shared/hooks/useAutosave";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 export default function SpecTab({ artifact, workflowId, onMutate, onNext }: { artifact?: any, workflowId: string, onMutate?: () => void, onNext?: () => void }) {

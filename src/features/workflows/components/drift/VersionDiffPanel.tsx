@@ -1,5 +1,5 @@
 import { PlusCircle, MinusCircle, Edit2, Info } from "lucide-react";
-import type { RequirementDiff } from "@/server/services/drift-engine";
+import type { RequirementDiff } from "@/infrastructure/services/drift-engine";
 
 interface VersionDiffPanelProps {
   diffs: RequirementDiff[];

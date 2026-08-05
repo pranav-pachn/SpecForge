@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { getAuthenticatedUser, apiError } from "@/server/services/api-helpers";
-import { WorkflowContext } from "@/lib/ai/engine/WorkflowContext";
-import { EventBus } from "@/lib/ai/engine/EventBus";
-import { WorkflowEngine } from "@/lib/ai/engine/WorkflowEngine";
-import { StandardPipeline } from "@/lib/ai/engine/Pipeline";
-import { persistPipelineArtifacts } from "@/lib/ai/engine/persistArtifacts";
+import { db } from "@/platform/storage/db";
+import { getAuthenticatedUser, apiError } from "@/infrastructure/services/api-helpers";
+import { WorkflowContext } from "@/workflow/engine/WorkflowContext";
+import { EventBus } from "@/workflow/engine/EventBus";
+import { WorkflowEngine } from "@/workflow/engine/WorkflowEngine";
+import { StandardPipeline } from "@/workflow/engine/Pipeline";
+import { persistPipelineArtifacts } from "@/workflow/artifacts/persistArtifacts";
 
 export const maxDuration = 300; // 5 minutes
 

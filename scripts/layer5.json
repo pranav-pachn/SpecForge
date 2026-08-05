@@ -1,0 +1,15 @@
+{
+  "moves": [
+    { "old": "lib/knowledge/ContextBuilder.ts", "new": "context/knowledge/ContextBuilder.ts" },
+    { "old": "lib/knowledge/KnowledgeService.ts", "new": "context/knowledge/KnowledgeService.ts" },
+    { "old": "lib/knowledge/Node.ts", "new": "context/knowledge/Node.ts" },
+    { "old": "lib/knowledge/Relationships.ts", "new": "context/knowledge/Relationships.ts" },
+    { "old": "lib/knowledge/Retriever.ts", "new": "context/retrieval/Retriever.ts" },
+    { "old": "lib/knowledge/Ranking.ts", "new": "context/retrieval/Ranking.ts" },
+    { "old": "lib/knowledge/EmbeddingProvider.ts", "new": "context/embeddings/EmbeddingProvider.ts" },
+    { "old": "lib/knowledge/EmbeddingQueue.ts", "new": "context/embeddings/EmbeddingQueue.ts" },
+    { "old": "lib/knowledge/Indexer.ts", "new": "context/embeddings/Indexer.ts" },
+    { "old": "lib/knowledge/database", "new": "context/knowledge/database" },
+    { "old": "lib/knowledge/profiles", "new": "context/knowledge/profiles" }
+  ]
+}

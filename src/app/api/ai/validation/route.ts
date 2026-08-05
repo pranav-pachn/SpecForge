@@ -1,7 +1,7 @@
-import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
+import { db } from "@/platform/storage/db";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/infrastructure/services/api-helpers";
 import { NextRequest } from "next/server";
-import { ValidationEngine, ValidationContext } from "@/server/services/validation-engine";
+import { ValidationEngine, ValidationContext } from "@/infrastructure/services/validation-engine";
 
 export async function POST(req: NextRequest) {
   const user = await getAuthenticatedUser();

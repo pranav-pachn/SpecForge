@@ -1,5 +1,5 @@
-import { db } from "./src/lib/db";
-import { DriftEngine } from "./src/lib/memory/DriftEngine";
+import { db } from '@/platform/storage/db';
+import { DriftEngine } from './src/intelligence/memory/DriftEngine';
 
 async function main() {
   const memory = await db.engineeringMemory.findFirst();

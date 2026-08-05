@@ -1,5 +1,5 @@
-import { db } from "./src/lib/db";
-import { ImpactAnalyzer } from "./src/lib/memory/ImpactAnalyzer";
+import { db } from '@/platform/storage/db';
+import { ImpactAnalyzer } from './src/intelligence/memory/ImpactAnalyzer';
 
 async function main() {
   const memory = await db.engineeringMemory.findFirst();

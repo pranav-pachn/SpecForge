@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CoverageEngine } from "../../../../../lib/intelligence/validation/CoverageEngine";
+import { CoverageEngine } from '@/intelligence/validation/CoverageEngine';
 
 export async function GET(
   req: NextRequest,

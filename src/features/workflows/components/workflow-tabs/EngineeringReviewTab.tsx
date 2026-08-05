@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import EngineeringScoreHero from "../review/EngineeringScoreHero";
 import EngineeringCategoryCard from "../review/EngineeringCategoryCard";
 import EngineeringFindingRow from "@/features/workflows/components/review/EngineeringFindingRow";
-import { SkeletonTable } from "@/components/ui/Skeleton";
+import { SkeletonTable } from "@/shared/components/ui/Skeleton";
 
 export default function EngineeringReviewTab({ workflowId, onMutate, onNext }: { workflowId: string, onMutate?: () => void, onNext?: () => void }) {
   const router = useRouter();

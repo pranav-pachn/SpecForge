@@ -1,0 +1,6 @@
+{
+  "moves": [
+    { "old": "server/services", "new": "infrastructure/services" },
+    { "old": "server/repositories", "new": "infrastructure/repositories" }
+  ]
+}

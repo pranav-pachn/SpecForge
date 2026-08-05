@@ -8,7 +8,7 @@ import WorkflowTabs, { TabId } from "@/features/workflows/components/workflows/W
 import { ArrowLeft, Loader2, Zap } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { ExportMenu } from "@/components/ui/ExportMenu";
+import { ExportMenu } from "@/shared/components/ui/ExportMenu";
 
 // Tab Components
 import SpecTab from "@/features/workflows/components/workflow-tabs/SpecTab";

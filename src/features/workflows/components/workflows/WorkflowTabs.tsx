@@ -1,7 +1,7 @@
 "use client";
 
 import { FileText, MessageSquare, Layers, ListTodo, Zap, CheckSquare, ShieldCheck, Activity, GitBranch } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/utils";
 import { useEffect, useRef } from "react";
 
 import { Brain, Network } from "lucide-react";

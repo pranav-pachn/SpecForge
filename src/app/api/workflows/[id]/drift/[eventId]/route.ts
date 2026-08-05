@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db } from "@/platform/storage/db";
 import { DriftEventStatus } from "@prisma/client";
 
 export async function PATCH(

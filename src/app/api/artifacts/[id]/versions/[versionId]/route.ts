@@ -1,8 +1,8 @@
-import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
+import { db } from "@/platform/storage/db";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/infrastructure/services/api-helpers";
 import { ArtifactVersionStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
-import { logEvent } from "@/lib/instrumentation";
+import { logEvent } from "@/platform/telemetry/instrumentation";
 
 export async function GET(
   req: NextRequest,

@@ -1,0 +1,11 @@
+{
+  "moves": [
+    { "old": "lib/intelligence/drift", "new": "intelligence/drift" },
+    { "old": "lib/intelligence/graph", "new": "intelligence/graph" },
+    { "old": "lib/intelligence/impact", "new": "intelligence/impact" },
+    { "old": "lib/intelligence/planning", "new": "intelligence/planning" },
+    { "old": "lib/intelligence/validation", "new": "intelligence/validation" },
+    { "old": "lib/intelligence/IntelligenceFacade.ts", "new": "intelligence/IntelligenceFacade.ts" },
+    { "old": "lib/memory", "new": "intelligence/memory" }
+  ]
+}

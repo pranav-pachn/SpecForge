@@ -1,5 +1,5 @@
-import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
+import { db } from "@/platform/storage/db";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/infrastructure/services/api-helpers";
 import { NextRequest } from "next/server";
 
 const DEFAULT_PROFILES = [

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import "@/app/globals.css";
-import { Providers } from "@/components/providers";
+import { Providers } from "@/shared/components/providers";
 
 const outfit = Outfit({ subsets: ["latin"] });
 

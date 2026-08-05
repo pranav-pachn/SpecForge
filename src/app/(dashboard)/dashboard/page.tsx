@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, ArrowRight, Hammer, CheckCircle2, AlertTriangle, Layers, Trash2 } from "lucide-react";
 import CreateWorkflowModal from "@/features/workflows/components/workflows/CreateWorkflowModal";
 import { WorkflowStatus } from "@prisma/client";
-import { WORKFLOW_STATUS_LABELS, WORKFLOW_STATUS_COLORS } from "@/lib/constants";
+import { WORKFLOW_STATUS_LABELS, WORKFLOW_STATUS_COLORS } from "@/shared/constants";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 

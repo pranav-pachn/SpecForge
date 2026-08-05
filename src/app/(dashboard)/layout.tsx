@@ -1,7 +1,7 @@
-import Navbar from "@/components/layout/Navbar";
-import Sidebar from "@/components/layout/Sidebar";
-import Providers from "@/components/shared/Providers";
-import { MobileMenuProvider } from "@/components/layout/MobileMenuContext";
+import Navbar from "@/shared/components/layout/Navbar";
+import Sidebar from "@/shared/components/layout/Sidebar";
+import Providers from "@/shared/components/shared/Providers";
+import { MobileMenuProvider } from "@/shared/components/layout/MobileMenuContext";
 
 export default function DashboardLayout({
   children,

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { KnowledgeService } from "@/lib/knowledge/KnowledgeService";
+import { KnowledgeService } from "@/context/knowledge/KnowledgeService";
 
 export async function GET(
   request: Request,

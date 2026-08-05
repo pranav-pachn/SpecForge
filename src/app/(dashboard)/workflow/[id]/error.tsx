@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { AlertTriangle, RefreshCcw } from "lucide-react";
-import { logger } from "@/lib/logger";
+import { logger } from "@/platform/telemetry/logger";
 
 export default function WorkflowError({
   error,

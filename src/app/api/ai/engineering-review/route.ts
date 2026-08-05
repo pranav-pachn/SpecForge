@@ -1,7 +1,7 @@
-import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
+import { db } from "@/platform/storage/db";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/infrastructure/services/api-helpers";
 import { NextRequest } from "next/server";
-import { EngineeringReviewEngine, EngineeringReviewContext } from "@/server/services/engineering-review-engine";
+import { EngineeringReviewEngine, EngineeringReviewContext } from "@/infrastructure/services/engineering-review-engine";
 
 export async function POST(req: NextRequest) {
   const user = await getAuthenticatedUser();

@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { Loader2, ListTodo, Plus, ArrowRight, Split, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TaskCard from "@/features/workflows/components/workflows/TaskCard";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { SkeletonCard } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/shared/components/ui/EmptyState";
+import { SkeletonCard } from "@/shared/components/ui/Skeleton";
 import { toast } from "sonner";
 
 export default function TasksTab({ workflowId, onMutate, onNext }: { workflowId: string, onMutate?: () => void, onNext?: () => void }) {

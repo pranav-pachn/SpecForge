@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GraphService } from "@/lib/intelligence/graph/GraphService";
+import { GraphService } from "@/intelligence/graph/GraphService";
 
 export async function GET(
   req: NextRequest,

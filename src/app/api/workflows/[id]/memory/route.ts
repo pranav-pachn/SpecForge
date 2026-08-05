@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { DecisionQuery } from "@/lib/intelligence/memory/DecisionQuery";
+import { DecisionQuery } from '@/intelligence/memory/DecisionQuery';
 
 export async function GET(
   request: Request,

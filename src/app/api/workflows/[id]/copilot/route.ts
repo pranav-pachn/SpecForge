@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthenticatedUser, apiError } from "@/server/services/api-helpers";
-import { IntelligenceFacade } from "@/lib/intelligence/IntelligenceFacade";
-import { gateway } from "@/lib/ai/gateway/gateway";
+import { getAuthenticatedUser, apiError } from "@/infrastructure/services/api-helpers";
+import { IntelligenceFacade } from "@/intelligence/IntelligenceFacade";
+import { gateway } from "@/ai/gateway/gateway";
 
 export async function POST(
   req: NextRequest,

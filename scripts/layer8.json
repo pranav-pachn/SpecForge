@@ -1,0 +1,9 @@
+{
+  "moves": [
+    { "old": "lib/ai/engine", "new": "workflow/engine" },
+    { "old": "workflow/engine/persistArtifacts.ts", "new": "workflow/artifacts/persistArtifacts.ts" },
+    { "old": "application/WorkflowApplicationService.ts", "new": "workflow/engine/WorkflowApplicationService.ts" },
+    { "old": "application/ApprovalApplicationService.ts", "new": "workflow/approvals/ApprovalApplicationService.ts" },
+    { "old": "features/execution-packs", "new": "workflow/execution-packs" }
+  ]
+}

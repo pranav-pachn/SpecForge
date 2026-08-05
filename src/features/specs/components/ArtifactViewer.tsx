@@ -1,6 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import { formatDistanceToNow } from "date-fns";
-import { VERSION_STATUS_COLORS } from "@/lib/constants";
+import { VERSION_STATUS_COLORS } from "@/shared/constants";
 import { ArtifactVersionStatus } from "@prisma/client";
 
 export default function ArtifactViewer({ artifact }: { artifact: any }) {

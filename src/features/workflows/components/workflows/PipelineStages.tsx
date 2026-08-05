@@ -1,7 +1,7 @@
 import { WorkflowStatus } from "@prisma/client";
-import { WORKFLOW_PIPELINE_STAGES, WORKFLOW_STATUS_LABELS } from "@/lib/constants";
+import { WORKFLOW_PIPELINE_STAGES, WORKFLOW_STATUS_LABELS } from "@/shared/constants";
 import { Check, CircleDot, Circle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/utils";
 
 export default function PipelineStages({ currentStatus }: { currentStatus: WorkflowStatus }) {
   const currentIndex = WORKFLOW_PIPELINE_STAGES.indexOf(currentStatus as any);

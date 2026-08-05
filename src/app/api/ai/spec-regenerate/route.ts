@@ -1,8 +1,8 @@
-import { db } from "@/lib/db";
-import { getAuthenticatedUser, jsonResponse, apiError } from "@/server/services/api-helpers";
+import { db } from "@/platform/storage/db";
+import { getAuthenticatedUser, jsonResponse, apiError } from "@/infrastructure/services/api-helpers";
 import { NextRequest } from "next/server";
-import { gateway } from "@/lib/ai/gateway/gateway";
-import { PromptRegistry } from "@/lib/ai/prompts/registry";
+import { gateway } from "@/ai/gateway/gateway";
+import { PromptRegistry } from "@/ai/prompts/registry";
 
 export const maxDuration = 60; // 60 seconds max duration for Vercel
 
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     // Run drift engine after transaction
     if (latestVersion) {
-      const { handleArtifactDrift } = await import("@/server/services/drift-engine");
+      const { handleArtifactDrift } = await import("@/infrastructure/services/drift-engine");
       await handleArtifactDrift(workflowId, "SPEC", latestVersion.id, newVersion.id);
     }
 

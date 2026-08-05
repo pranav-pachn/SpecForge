@@ -1,0 +1,10 @@
+{
+  "moves": [
+    { "old": "lib/ai/gateway", "new": "ai/gateway" },
+    { "old": "lib/ai/providers", "new": "ai/providers" },
+    { "old": "lib/ai/prompts", "new": "ai/prompts" },
+    { "old": "lib/ai/capabilities", "new": "ai/capabilities" },
+    { "old": "lib/ai/schemas", "new": "ai/schemas" },
+    { "old": "lib/ai/chains", "new": "ai/strategies" }
+  ]
+}

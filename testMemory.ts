@@ -1,7 +1,7 @@
-import { db } from "./src/lib/db";
-import { persistPipelineArtifacts } from "./src/lib/ai/engine/persistArtifacts";
-import { WorkflowContext } from "./src/lib/ai/engine/WorkflowContext";
-import { MemoryEngine } from "./src/lib/memory/MemoryEngine";
+import { db } from '@/platform/storage/db';
+import { persistPipelineArtifacts } from './src/workflow/artifacts/persistArtifacts';
+import { WorkflowContext } from './src/workflow/engine/WorkflowContext';
+import { MemoryEngine } from './src/intelligence/memory/MemoryEngine';
 
 async function main() {
   console.log("Creating test workflow...");
