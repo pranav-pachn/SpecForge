@@ -1,0 +1,91 @@
+name: SpecForge CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  validate:
+    name: Validation Pipeline
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Prisma Validate
+      run: npx prisma validate
+      
+    - name: Typecheck
+      run: npx tsc --noEmit
+      
+    - name: Lint
+      run: npx eslint .
+      
+    - name: Unit Tests
+      run: npm run test:unit
+      
+    - name: Integration Tests
+      run: npm run test:integration
+
+  build:
+    name: Build & Package
+    needs: validate
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Next.js Build
+      run: npm run build
+      
+    - name: Docker Build (Web)
+      run: docker build -t specforge-web -f Dockerfile.web .
+      
+    - name: Docker Build (Worker)
+      run: docker build -t specforge-worker -f Dockerfile.worker .
+
+    - name: Security Scan
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  deploy_preview:
+    name: Deploy Preview
+    needs: build
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Trigger Preview Deployment
+      run: echo "Deploying ephemeral preview environment..."
+      # (e.g. Vercel deploy, or deploying docker stack to a temporary EC2 instance)
+
+  deploy_production:
+    name: Production Deploy
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Deploy Production
+      run: echo "Deploying to production infrastructure..."

@@ -208,7 +208,7 @@ async function computeSemanticDiffAI(oldContent: string, newContent: string): Pr
   try {
     const { text } = await gateway.execute({
       capability: "drift",
-      system: PromptRegistry.drift(),
+      system: await PromptRegistry.drift(),
       prompt
     });
     
@@ -425,6 +425,8 @@ export async function handleArtifactDrift(
     const impactGraph = await buildImpactGraph(workflowId, diffs);
 
     // 4. Create DriftAnalysis Record
+    console.log(`[DriftEngine] Changed Requirements: ${diffs.length}`);
+    console.log(`[DriftEngine] ImpactGraph counts: Tasks=${impactGraph.counts.tasks}, Packs=${impactGraph.counts.executionPacks}`);
     const driftAnalysis = await db.driftAnalysis.create({
       data: {
         workflowId,

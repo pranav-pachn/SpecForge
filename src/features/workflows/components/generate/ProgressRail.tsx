@@ -99,15 +99,19 @@ export default function ProgressRail({ workflowId, intakeData, onComplete, onErr
     return () => { isSubscribed = false; };
   }, [workflowId, intakeData, onComplete, onError]);
 
-  const orderedStages = [
-    'Planning',
-    'Clarifying',
-    'Specification',
-    'Architecture',
-    'Task Planning',
-    'Engineering Review',
-    'Validation'
-  ];
+  const orderedStages = intakeData.phase === 'clarify' 
+    ? ['Planning', 'Clarifying']
+    : intakeData.phase === 'generate'
+      ? ['Specification', 'Architecture', 'Task Planning', 'Engineering Review', 'Validation']
+      : [
+          'Planning',
+          'Clarifying',
+          'Specification',
+          'Architecture',
+          'Task Planning',
+          'Engineering Review',
+          'Validation'
+        ];
 
   const getIcon = (status: string) => {
     switch (status) {
@@ -120,9 +124,15 @@ export default function ProgressRail({ workflowId, intakeData, onComplete, onErr
 
   const completedCount = Object.entries(stages).filter(([k, v]) => v === 'done' && k !== 'Pipeline').length;
 
+  const title = intakeData.phase === 'clarify' 
+    ? 'Phase 1: Clarification' 
+    : intakeData.phase === 'generate' 
+      ? 'Phase 2: Generation' 
+      : 'Orchestrating Workflow';
+
   return (
     <div className="w-full max-w-md mx-auto bg-slate-900/50 border border-slate-700 p-6 rounded-xl">
-      <h3 className="text-lg font-bold text-white mb-6">Orchestrating Workflow</h3>
+      <h3 className="text-lg font-bold text-white mb-6">{title}</h3>
       <div className="space-y-4">
         {orderedStages.map(stage => (
           <div key={stage} className="flex items-center gap-4">

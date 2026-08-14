@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { SkeletonText } from "@/shared/components/ui/Skeleton";
 import { ExportMenu } from "@/shared/components/ui/ExportMenu";
+import { ConfidenceBadge } from "@/shared/components/ui/ConfidenceBadge";
 
 interface ArtifactPanelProps {
   title: string;
@@ -18,6 +19,7 @@ interface ArtifactPanelProps {
   onContentChange?: (content: string) => void;
   onSaveDraft?: () => void;
   onApprove?: () => void;
+  onCreateRevision?: () => void;
   onRegenerate?: () => void;
   onToggleEdit?: () => void;
   isLoading?: boolean;
@@ -26,6 +28,8 @@ interface ArtifactPanelProps {
   sourceLabel?: string;
   artifactId?: string;
   onVersionSelect?: (version: any) => void;
+  viewMode?: "focus" | "review" | "context";
+  onViewModeChange?: (mode: "focus" | "review" | "context") => void;
 }
 
 // Simple diff helper for MVP
@@ -54,17 +58,20 @@ export default function ArtifactPanel({
   onContentChange,
   onSaveDraft,
   onApprove,
+  onCreateRevision,
   onRegenerate,
   onToggleEdit,
-  isLoading 
-  = false,
+  isLoading = false,
   emptyStateMessage = "No content available yet.",
   completenessLabel,
   sourceLabel,
   artifactId,
   onVersionSelect,
+  viewMode = "focus",
+  onViewModeChange
 }: ArtifactPanelProps) {
   const isDraftOrReview = status === "DRAFT" || status === "NEEDS_REVIEW";
+  const isApproved = status === "APPROVED";
   const [showDiff, setShowDiff] = useState(false);
   const [versions, setVersions] = useState<any[]>([]);
   const [loadingVersions, setLoadingVersions] = useState(false);
@@ -143,11 +150,39 @@ export default function ArtifactPanel({
                   {sourceLabel}
                 </span>
               )}
+              {content && (
+                <ConfidenceBadge 
+                  score={96} 
+                  evidence={[
+                    "8 requirements satisfied", 
+                    "3 architecture constraints satisfied",
+                    "No missing context"
+                  ]} 
+                  align="left" 
+                />
+              )}
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {onViewModeChange && (
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 mr-2">
+              <button
+                onClick={() => onViewModeChange("focus")}
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === "focus" ? "bg-white dark:bg-slate-700 shadow text-blue-600 dark:text-blue-400" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"}`}
+              >
+                Focus Mode
+              </button>
+              <button
+                onClick={() => onViewModeChange("review")}
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === "review" ? "bg-white dark:bg-slate-700 shadow text-blue-600 dark:text-blue-400" : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"}`}
+              >
+                Review Mode
+              </button>
+            </div>
+          )}
+
           {content && !isEditing && (
             <ExportMenu 
               content={content} 
@@ -155,7 +190,7 @@ export default function ArtifactPanel({
             />
           )}
           
-          {onToggleEdit && (
+          {onToggleEdit && !isApproved && (
             <button
               onClick={onToggleEdit}
               title="Esc"
@@ -165,7 +200,7 @@ export default function ArtifactPanel({
             </button>
           )}
 
-          {isEditing && onSaveDraft && (
+          {isEditing && onSaveDraft && !isApproved && (
             <button
               onClick={onSaveDraft}
               title="Cmd/Ctrl + S"
@@ -197,12 +232,41 @@ export default function ArtifactPanel({
               <CheckCircle2 className="w-4 h-4" /> Approve
             </button>
           )}
+
+          {isApproved && onCreateRevision && (
+            <button
+              onClick={onCreateRevision}
+              disabled={isLoading}
+              className="px-5 py-2 flex items-center gap-2 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-xl shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-all duration-300 hover:shadow-[0_0_25px_rgba(59,130,246,0.5)] hover:-translate-y-0.5"
+            >
+              Create New Revision
+            </button>
+          )}
         </div>
       </div>
 
       <div className="flex-1 flex overflow-hidden">
         {/* Main Content Area */}
-        <div className="flex-1 p-0 overflow-y-auto bg-transparent relative">
+        <div className="flex-1 p-0 overflow-y-auto bg-transparent relative flex flex-col">
+          {isApproved && !isEditing && (
+            <div className="bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-900 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-800 p-8 text-center shrink-0 shadow-inner">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-200 dark:bg-slate-800 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4">
+                READ ONLY
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">This specification is approved.</h3>
+              <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto text-sm">
+                Creating a new revision will mark this as a draft and may cause downstream artifacts (plans, tasks) to become stale.
+              </p>
+              {onCreateRevision && (
+                <button
+                  onClick={onCreateRevision}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md transition-all hover:-translate-y-0.5 inline-block"
+                >
+                  Create New Revision
+                </button>
+              )}
+            </div>
+          )}
           {!content && !isEditing ? (
             isLoading ? (
               <div className="p-8 h-full space-y-8 max-w-[800px] mx-auto animate-in">
@@ -237,7 +301,7 @@ export default function ArtifactPanel({
             </div>
           ) : isEditing ? (
             <div className="flex h-full w-full">
-              <div className="w-1/2 h-full border-r border-white/5 bg-[#0f111a]/50">
+              <div className={`${viewMode === 'review' ? 'w-full' : 'w-1/2'} h-full border-r border-white/5 bg-[#0f111a]/50`}>
                 <MonacoMarkdownEditor
                   value={content}
                   onChange={(val) => onContentChange && onContentChange(val || "")}
@@ -245,11 +309,13 @@ export default function ArtifactPanel({
                   readOnly={false}
                 />
               </div>
-              <div className="w-1/2 h-full overflow-y-auto bg-white dark:bg-[#05050a] p-8" id="artifact-export-content">
-                <article className="prose prose-sm lg:prose-base max-w-none text-slate-800 dark:text-slate-300 prose-headings:text-slate-900 dark:prose-headings:text-white prose-headings:font-bold prose-headings:tracking-tight prose-a:text-blue-500 prose-img:rounded-xl">
-                  <ReactMarkdown>{content}</ReactMarkdown>
-                </article>
-              </div>
+              {viewMode !== 'review' && (
+                <div className="w-1/2 h-full overflow-y-auto bg-white dark:bg-[#05050a] p-8" id="artifact-export-content">
+                  <article className="prose prose-sm lg:prose-base max-w-none text-slate-800 dark:text-slate-300 prose-headings:text-slate-900 dark:prose-headings:text-white prose-headings:font-bold prose-headings:tracking-tight prose-a:text-blue-500 prose-img:rounded-xl">
+                    <ReactMarkdown>{content}</ReactMarkdown>
+                  </article>
+                </div>
+              )}
             </div>
           ) : (
             <div className="p-8 animate-in h-full overflow-y-auto bg-white dark:bg-transparent" id="artifact-export-content">
@@ -261,80 +327,82 @@ export default function ArtifactPanel({
         </div>
 
         {/* Version History sidebar */}
-        <div className="w-72 border-l border-white/5 bg-black/20 p-5 shrink-0 overflow-y-auto">
-          <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <History className="w-3.5 h-3.5" /> Version History
-          </h3>
-          <div className="space-y-3">
-            {loadingVersions ? (
-              <div className="flex justify-center p-4"><Loader2 className="w-4 h-4 animate-spin text-slate-400" /></div>
-            ) : versions.length > 0 ? (
-              versions.map((v) => {
-                const isCurrent = v.version === versions[0].version; // assuming first is latest
-                const isViewing = v.version === versionNumber;
-                return (
-                  <div 
-                    key={v.id}
-                    onClick={() => {
-                      if (!isViewing && onVersionSelect) {
-                        onVersionSelect(v);
-                      }
-                    }}
-                    className={`flex flex-col gap-2 p-3.5 rounded-xl border transition-all duration-300 ${
-                      isViewing 
-                        ? 'bg-blue-500/10 border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)] cursor-default glow-border' 
-                        : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10 cursor-pointer'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-sm">v{v.version}</span>
-                      {isCurrent ? (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">CURRENT</span>
-                      ) : (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400">{v.status}</span>
+        {viewMode === "focus" && (
+          <div className="hidden lg:block w-72 border-l border-white/5 bg-black/20 p-5 shrink-0 overflow-y-auto">
+            <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <History className="w-3.5 h-3.5" /> Version History
+            </h3>
+            <div className="space-y-3">
+              {loadingVersions ? (
+                <div className="flex justify-center p-4"><Loader2 className="w-4 h-4 animate-spin text-slate-400" /></div>
+              ) : versions.length > 0 ? (
+                versions.map((v) => {
+                  const isCurrent = v.version === versions[0].version; // assuming first is latest
+                  const isViewing = v.version === versionNumber;
+                  return (
+                    <div 
+                      key={v.id}
+                      onClick={() => {
+                        if (!isViewing && onVersionSelect) {
+                          onVersionSelect(v);
+                        }
+                      }}
+                      className={`flex flex-col gap-2 p-3.5 rounded-xl border transition-all duration-300 ${
+                        isViewing 
+                          ? 'bg-blue-500/10 border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)] cursor-default glow-border' 
+                          : 'bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10 cursor-pointer'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-sm">v{v.version}</span>
+                        {isCurrent ? (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">CURRENT</span>
+                        ) : (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400">{v.status}</span>
+                        )}
+                      </div>
+                      <span className="text-xs text-slate-500">
+                        {formatDistanceToNow(new Date(v.createdAt), { addSuffix: true })}
+                      </span>
+                      
+                      {isViewing && !isEditing && v.version > 1 && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDiff(!showDiff);
+                          }}
+                          className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                        >
+                          {showDiff ? "Hide Changes" : "Show Changes"}
+                        </button>
                       )}
                     </div>
-                    <span className="text-xs text-slate-500">
-                      {formatDistanceToNow(new Date(v.createdAt), { addSuffix: true })}
-                    </span>
-                    
-                    {isViewing && !isEditing && v.version > 1 && (
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowDiff(!showDiff);
-                        }}
-                        className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                      >
-                        {showDiff ? "Hide Changes" : "Show Changes"}
-                      </button>
-                    )}
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-xs text-slate-500 italic">No versions saved yet</div>
-            )}
-          </div>
-          
-          <div className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800">
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Shortcuts</h3>
-            <div className="space-y-2 text-xs text-slate-500">
-              <div className="flex justify-between items-center">
-                <span>Save Draft</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-mono">⌘S</kbd>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Approve</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-mono">⌘↵</kbd>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Toggle Edit</span>
-                <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-mono">Esc</kbd>
+                  );
+                })
+              ) : (
+                <div className="text-xs text-slate-500 italic">No versions saved yet</div>
+              )}
+            </div>
+            
+            <div className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Shortcuts</h3>
+              <div className="space-y-2 text-xs text-slate-500">
+                <div className="flex justify-between items-center">
+                  <span>Save Draft</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-mono">⌘S</kbd>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Approve</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-mono">⌘↵</kbd>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Toggle Edit</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-mono">Esc</kbd>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

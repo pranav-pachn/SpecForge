@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { gateway } from "@/ai/gateway/gateway";
 import { PromptRegistry } from "@/ai/prompts/registry";
 import { ToolName } from "@prisma/client";
+import { compileExecutionPack } from "@/workflow/execution-packs/compiler";
 
 export async function POST(req: NextRequest) {
   const user = await getAuthenticatedUser();
@@ -25,54 +26,7 @@ export async function POST(req: NextRequest) {
     if (!task) return apiError("Task not found", 404);
     if (task.workflow.creatorId !== user.id) return apiError("Unauthorized", 401);
 
-    // Get tool profile
-    const toolProfile = await db.toolProfile.findUnique({
-      where: { name: toolName }
-    });
-
-    let configStr = "";
-    if (toolProfile) {
-      try {
-        const parsed = JSON.parse(toolProfile.config);
-        configStr = parsed.promptTemplate || "";
-      } catch (e) {}
-    }
-
-    const prompt = `
-Task to execute:
-Title: ${task.title}
-Description: ${task.description || "None"}
-Acceptance Criteria: ${task.acceptanceCriteria || "None"}
-
-### Full Feature Specification (for context)
-${specContent}
-
-### Implementation Plan (for context)
-${planContent || "None provided."}
-
-### Tool Formatting Preferences (${toolName})
-${configStr || "No specific formatting required. Use clear markdown."}
-
-Generate the optimal prompt/execution pack for this tool to implement this task.
-`;
-
-    const { text } = await gateway.execute({
-      capability: "spec",
-      system: PromptRegistry.spec(),
-      prompt,
-    });
-
-    let packContent = text;
-    try {
-      if (text.includes("{") && text.includes("}")) {
-        const jsonStr = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
-        // validate JSON
-        JSON.parse(jsonStr);
-        packContent = jsonStr;
-      }
-    } catch (e) {
-      console.warn("Could not parse AI response as JSON", e);
-    }
+    const packContent = await compileExecutionPack(taskId, toolName as ToolName, specContent, planContent);
 
     // Determine the version this pack belongs to (we use the plan's version)
     // Actually, ExecutionPacks are generated from tasks which belong to a versionId (the Plan's version).

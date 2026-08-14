@@ -15,7 +15,8 @@ export class WorkflowApplicationService {
     organizationId: string, 
     projectId: string, 
     name: string, 
-    userId: string
+    userId: string,
+    rawIdea?: string
   ) {
     // 1. RBAC Check: Ensure the user has at least EDITOR access on the project
     //    or ADMIN access implicitly via Org roles.
@@ -63,7 +64,7 @@ export class WorkflowApplicationService {
           versions: {
             create: {
               version: 1,
-              content: "",
+              content: rawIdea || "",
               status: ArtifactVersionStatus.DRAFT,
             },
           },

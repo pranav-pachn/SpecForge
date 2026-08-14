@@ -91,7 +91,7 @@ export default function CreateWorkflowModal({
             <div className="absolute inset-0 z-10 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-8">
               <ProgressRail 
                 workflowId={createdWorkflowId} 
-                intakeData={{ rawIdea, audience, goal, outOfScope, constraints, targetTool }}
+                intakeData={{ rawIdea, audience, goal, outOfScope, constraints, targetTool, phase: 'clarify' }}
                 onComplete={handlePipelineComplete}
                 onError={(msg) => setError(msg)}
               />

@@ -4,15 +4,18 @@ import { useState, useEffect } from "react";
 import ArtifactPanel from "@/features/specs/components/ArtifactPanel";
 import { useRouter } from "next/navigation";
 import { useAutosave } from "@/shared/hooks/useAutosave";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { SpecReviewChecklist } from "@/features/specs/components/SpecReviewChecklist";
+import { ContextPanel } from "@/features/specs/components/ContextPanel";
 
 export default function SpecTab({ artifact, workflowId, onMutate, onNext }: { artifact?: any, workflowId: string, onMutate?: () => void, onNext?: () => void }) {
   const router = useRouter();
   const version = artifact?.versions?.[0];
   
-  const [content, setContent] = useState(version?.content || "");
-  const [isEditing, setIsEditing] = useState(!version?.content);
+  const defaultTemplate = `# Specification\n\n## Goals\nDefine what you want to achieve.\n\n## Scope & Non-goals\nDefine what is included and excluded.\n\n## Acceptance Criteria\nList the conditions for success.\n`;
+  const [content, setContent] = useState(version?.content || defaultTemplate);
+  const [isEditing, setIsEditing] = useState(version?.status === "DRAFT" || version?.status === "NEEDS_REVIEW" || !version?.content);
   const [isLoading, setIsLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<"focus" | "review" | "context">("review");
 
   useEffect(() => {
     const handleOpenEdit = () => setIsEditing(true);
@@ -20,23 +23,21 @@ export default function SpecTab({ artifact, workflowId, onMutate, onNext }: { ar
     return () => window.removeEventListener('open-spec-edit', handleOpenEdit);
   }, []);
 
+  // Update edit mode when version status changes (e.g. after approval or new revision)
+  useEffect(() => {
+    if (version?.status === "APPROVED") {
+      setIsEditing(false);
+    } else {
+      setIsEditing(true);
+    }
+    setContent(version?.content || defaultTemplate);
+  }, [version?.id, version?.status]);
+
   useAutosave(content, async () => {
-    if (isEditing && version?.content !== content) {
+    if (isEditing && version?.content !== content && version?.status !== "APPROVED") {
       await handleSaveDraft();
     }
   }, 3000, isEditing);
-
-  // Check how many of the 12 sections are present
-  const sectionKeywords = [
-    "Overview", "Goals", "Non-goals", "Target Users", 
-    "Functional Requirements", "Acceptance Criteria", "Edge Cases", 
-    "Non-functional Requirements", "Technical Constraints", 
-    "Risks", "Rollout", "Open Questions"
-  ];
-  
-  const presentSections = sectionKeywords.filter(keyword => 
-    content.toLowerCase().includes(keyword.toLowerCase())
-  ).length;
 
   const handleSaveDraft = async () => {
     if (!artifact || !version) return;
@@ -47,7 +48,6 @@ export default function SpecTab({ artifact, workflowId, onMutate, onNext }: { ar
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content, status: "DRAFT" }),
       });
-      setIsEditing(false);
       router.refresh();
       onMutate?.();
     } catch (error) {
@@ -71,10 +71,38 @@ export default function SpecTab({ artifact, workflowId, onMutate, onNext }: { ar
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "CLARIFYING" }),
       });
+      setIsEditing(false);
+      router.refresh();
+      onMutate?.();
+      onNext?.();
+    } catch (error) {
+      console.error("Failed to approve spec:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateRevision = async () => {
+    if (!artifact || !version) return;
+    setIsLoading(true);
+    try {
+      // Logic to create a new draft version from the approved one
+      await fetch(`/api/artifacts/${artifact.id}/versions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, status: "DRAFT" }), // usually backend handles incrementing version
+      });
+      // We also need to reset the workflow status if we go back to drafting, but let's assume the backend handles this or we just set it
+      await fetch(`/api/workflows/${workflowId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "DRAFT" }),
+      });
+      setIsEditing(true);
       router.refresh();
       onMutate?.();
     } catch (error) {
-      console.error("Failed to approve spec:", error);
+      console.error("Failed to create revision:", error);
     } finally {
       setIsLoading(false);
     }
@@ -93,41 +121,59 @@ export default function SpecTab({ artifact, workflowId, onMutate, onNext }: { ar
   }
 
   return (
-    <div className="space-y-6">
-      <ArtifactPanel
-        title="Specification"
-        status={version.status}
-        versionNumber={version.version}
-        content={content}
-        artifactId={artifact.id}
-        onVersionSelect={(v) => {
-          setContent(v.content);
-          setIsEditing(false);
-        }}
-        isEditing={isEditing}
-        onContentChange={setContent}
-        onToggleEdit={() => setIsEditing(!isEditing)}
-        onSaveDraft={handleSaveDraft}
-        onApprove={handleApprove}
-        isLoading={isLoading}
-        completenessLabel={`${presentSections}/12 sections`}
-      />
+    <div className="flex h-[calc(100vh-14rem)] bg-white dark:bg-[#05050a] rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm transition-all">
       
-      {version.status === "APPROVED" && (
-        <div className="glass-panel p-6 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-green-500/20 bg-green-500/5 shadow-[0_0_20px_rgba(34,197,94,0.1)]">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <CheckCircle2 className="w-6 h-6 text-green-500" />
-              <h3 className="text-xl font-bold text-white">Specification Approved</h3>
+      {/* Main Column: Editor/Preview (70-100%) */}
+      <div className={`flex-1 flex flex-col min-w-0 ${viewMode === "focus" ? 'w-full' : ''}`}>
+        <ArtifactPanel
+          title="Specification"
+          status={version.status}
+          versionNumber={version.version}
+          content={content}
+          artifactId={artifact.id}
+          onVersionSelect={(v) => {
+            setContent(v.content);
+            setIsEditing(v.status !== "APPROVED");
+          }}
+          isEditing={isEditing}
+          onContentChange={setContent}
+          onToggleEdit={() => setIsEditing(!isEditing)}
+          onSaveDraft={handleSaveDraft}
+          onCreateRevision={handleCreateRevision}
+          isLoading={isLoading}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
+      </div>
+
+      {/* Right Column: Sidebar Panels (Review & Context) */}
+      {viewMode === "review" && (
+        <div className="hidden lg:flex w-80 xl:w-96 shrink-0 flex-col border-l border-slate-200 dark:border-white/5 bg-slate-50/30 dark:bg-black/10 overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-4 border-b border-slate-200 dark:border-white/5">
+              <SpecReviewChecklist 
+                content={content} 
+                onApprove={handleApprove} 
+                isLoading={isLoading}
+                onAction={(id) => {
+                  const templates: Record<string, string> = {
+                    goals: "\n\n## Goals\nDefine what you want to achieve.\n",
+                    scope: "\n\n## Scope & Non-goals\nDefine what is included and excluded.\n",
+                    criteria: "\n\n## Acceptance Criteria\nList the conditions for success.\n",
+                    api: "\n\n## API / Interfaces\nDefine any API endpoints or external interfaces.\n",
+                    rollback: "\n\n## Rollback Strategy\nDefine how to recover from failure.\n"
+                  };
+                  if (templates[id] && !content.includes(templates[id].trim().split('\n')[0])) {
+                    setContent((prev: string) => prev + templates[id]);
+                    setIsEditing(true);
+                  }
+                }}
+              />
             </div>
-            <p className="text-sm text-slate-400">Your requirements are structured and ready. Next up: analyze ambiguities.</p>
+            <div className="p-4">
+              <ContextPanel workflowId={workflowId} />
+            </div>
           </div>
-          <button
-            onClick={onNext}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all hover:shadow-[0_0_15px_rgba(37,99,235,0.4)]"
-          >
-            Continue to Clarify <ArrowRight className="w-5 h-5" />
-          </button>
         </div>
       )}
     </div>

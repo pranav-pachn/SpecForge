@@ -3,6 +3,7 @@ import { getAuthenticatedUser, jsonResponse, apiError } from "@/infrastructure/s
 import { WorkflowStatus, ArtifactType, ArtifactVersionStatus } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { WorkflowApplicationService } from "@/workflow/engine/WorkflowApplicationService";
+import { SimulationReportGenerator } from "@/platform/sandbox/SimulationReportGenerator";
 
 export async function GET(req: NextRequest) {
   const user = await getAuthenticatedUser();
@@ -30,7 +31,22 @@ export async function GET(req: NextRequest) {
       orderBy: { updatedAt: "desc" },
     });
 
-    return jsonResponse(workflows);
+    const generator = new SimulationReportGenerator();
+    
+    const enrichedWorkflows = await Promise.all(workflows.map(async wf => {
+      // For MVP, we use the workflow ID. In future, this would be a specific executionId.
+      const report = await generator.generate(wf.id);
+      
+      // Calculate a "tasks completed" stat if we have tasks.
+      // We don't fetch tasks here directly, but we can derive progress from the report.
+      
+      return {
+        ...wf,
+        simulationReport: report
+      };
+    }));
+
+    return jsonResponse(enrichedWorkflows);
   } catch (error) {
     return apiError("Failed to fetch workflows", 500);
   }
@@ -41,7 +57,7 @@ export async function POST(req: NextRequest) {
   if (!user) return apiError("Unauthorized", 401);
 
   try {
-    const { name, projectId } = await req.json();
+    const { name, projectId, rawIdea } = await req.json();
 
     if (!name) {
       return apiError("Workflow name is required");
@@ -97,7 +113,8 @@ export async function POST(req: NextRequest) {
       targetOrgId,
       targetProjectId,
       name,
-      user.id
+      user.id,
+      rawIdea
     );
 
     return jsonResponse(workflow, 201);

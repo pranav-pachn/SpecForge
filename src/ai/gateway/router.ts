@@ -16,7 +16,8 @@ export type CapabilityType =
   | "clarify"
   | "auto_fix"
   | "review_gate"
-  | "architect";
+  | "architect"
+  | "spec_review";
 
 export interface ProviderRoute {
   provider: "cerebras" | "groq" | "mistral" | "openrouter" | "gemini";
@@ -84,6 +85,11 @@ export const ROUTER_CONFIG: Record<CapabilityType, CapabilityRoute> = {
   architect: {
     primary: { provider: "cerebras", model: "llama3.1-70b" },
     fallbacks: [{ provider: "groq", model: "llama-3.3-70b-versatile" }, { provider: "mistral", model: "mistral-large-latest" }],
+    cacheTtlMs: 0
+  },
+  spec_review: {
+    primary: { provider: "groq", model: "llama-3.3-70b-versatile" },
+    fallbacks: [{ provider: "mistral", model: "mistral-large-latest" }],
     cacheTtlMs: 0
   }
 };

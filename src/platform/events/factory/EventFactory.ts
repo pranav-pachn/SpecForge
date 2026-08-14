@@ -76,5 +76,25 @@ export class EventFactory {
   static resourceUtilized(payload: { tokensUsed: number, agentId?: string }, ctx: EventContext): DomainEvent<any> {
     return this.base("ResourceUtilized", payload, { ...ctx, source: "AgentRuntime" });
   }
+
+  static aiProviderFailed(payload: any, ctx: EventContext): DomainEvent<any> {
+    return this.base("AiProviderFailed", payload, { ...ctx, source: "AIGateway" });
+  }
+
+  static aiProviderFallback(payload: any, ctx: EventContext): DomainEvent<any> {
+    return this.base("AiProviderFallback", payload, { ...ctx, source: "AIGateway" });
+  }
+
+  static aiProviderRecovered(payload: any, ctx: EventContext): DomainEvent<any> {
+    return this.base("AiProviderRecovered", payload, { ...ctx, source: "AIGateway" });
+  }
+
+  static aiRequestCompleted(payload: any, ctx: EventContext): DomainEvent<any> {
+    return this.base("AiRequestCompleted", payload, { ...ctx, source: "AIGateway" });
+  }
+
+  static aiTokensConsumed(payload: any, ctx: EventContext): DomainEvent<any> {
+    return this.base("AiTokensConsumed", payload, { ...ctx, source: "AIGateway" });
+  }
 }
 

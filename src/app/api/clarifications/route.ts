@@ -8,14 +8,36 @@ export async function GET(req: NextRequest) {
 
   const searchParams = req.nextUrl.searchParams;
   const versionId = searchParams.get("versionId");
+  const workflowId = searchParams.get("workflowId");
 
-  if (!versionId) {
-    return apiError("versionId is required", 400);
+  if (!versionId && !workflowId) {
+    return apiError("versionId or workflowId is required", 400);
   }
 
   try {
+    const whereClause: any = {};
+    if (versionId) {
+      whereClause.versionId = versionId;
+      whereClause.version = {
+        artifact: {
+          workflow: {
+            creatorId: user.id
+          }
+        }
+      };
+    } else if (workflowId) {
+      whereClause.version = {
+        artifact: {
+          workflowId: workflowId,
+          workflow: {
+            creatorId: user.id
+          }
+        }
+      };
+    }
+
     const questions = await db.clarificationQuestion.findMany({
-      where: { versionId },
+      where: whereClause,
       include: { answer: true },
       orderBy: { createdAt: "asc" },
     });

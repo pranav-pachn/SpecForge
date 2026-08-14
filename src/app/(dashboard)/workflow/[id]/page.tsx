@@ -2,32 +2,35 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { normalizeEvents, StoredEvent } from "@/shared/utils/eventNormalizer";
 import { WorkflowStatus } from "@prisma/client";
-import PipelineStages from "@/features/workflows/components/workflows/PipelineStages";
-import WorkflowTabs, { TabId } from "@/features/workflows/components/workflows/WorkflowTabs";
-import { ArrowLeft, Loader2, Zap } from "lucide-react";
-import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { ExportMenu } from "@/shared/components/ui/ExportMenu";
+import { TabId } from "@/features/workflows/components/workflows/WorkflowTabs";
+
+// Workspace Components
+import { WorkspaceShell } from "@/features/workflows/components/workspace/WorkspaceShell";
+import { WorkspaceHeader } from "@/features/workflows/components/workspace/WorkspaceHeader";
+import { PipelineNavigation } from "@/features/workflows/components/workspace/PipelineNavigation";
+import { IntelligenceDrawer } from "@/features/workflows/components/workspace/IntelligenceDrawer";
+import { CurrentStage } from "@/features/workflows/components/workspace/CurrentStage";
+import { AgentActivitySidebar } from "@/features/workflows/components/workspace/AgentActivitySidebar";
+import DriftAlerts from "@/features/workflows/components/workflow-tabs/DriftAlerts";
+import { CopilotWidget } from "@/features/workflows/components/workflow-tabs/CopilotWidget";
 
 // Tab Components
 import SpecTab from "@/features/workflows/components/workflow-tabs/SpecTab";
 import ClarifyTab from "@/features/workflows/components/workflow-tabs/ClarifyTab";
-import PlanTab from "@/features/workflows/components/workflow-tabs/PlanTab";
-import TasksTab from "@/features/workflows/components/workflow-tabs/TasksTab";
+import { PlanningWorkspace } from "@/features/planning/components/PlanningWorkspace";
 import ExecuteTab from "@/features/workflows/components/workflow-tabs/ExecuteTab";
-import ReviewTab from "@/features/workflows/components/workflow-tabs/ReviewTab";
-import ValidateTab from "@/features/workflows/components/workflow-tabs/ValidateTab";
-import DriftTab from "@/features/workflows/components/workflow-tabs/DriftTab";
-import EngineeringReviewTab from "@/features/workflows/components/workflow-tabs/EngineeringReviewTab";
-import ArchitectureTab from "@/features/workflows/components/workflow-tabs/ArchitectureTab";
+import { ReviewWorkspace } from "@/features/validation/components/ReviewWorkspace";
+import { ValidationWorkspace } from "@/features/validation/components/ValidationWorkspace";
+import { EngineeringReviewTab } from "@/features/workflows/components/workflow-tabs/EngineeringReviewTab";
 import KnowledgeTab from "@/features/workflows/components/workflow-tabs/KnowledgeTab";
 import MemoryTab from "@/features/workflows/components/workflow-tabs/MemoryTab";
 import { GraphTab } from "@/features/workflows/components/workflow-tabs/GraphTab";
 import { TraceabilityTab } from "@/features/workflows/components/workflow-tabs/TraceabilityTab";
 import { TimelineTab } from "@/features/workflows/components/workflow-tabs/TimelineTab";
-import DriftAlerts from "@/features/workflows/components/workflow-tabs/DriftAlerts";
-import { CopilotWidget } from "@/features/workflows/components/workflow-tabs/CopilotWidget";
 
 const STATUS_TO_TAB: Record<WorkflowStatus, TabId> = {
   DRAFT: "spec",
@@ -35,9 +38,10 @@ const STATUS_TO_TAB: Record<WorkflowStatus, TabId> = {
   SPEC_REVIEW: "review",
   PLANNING: "plan",
   WAITING_FOR_APPROVAL: "plan",
-  TASK_BREAKDOWN: "tasks",
+  TASK_BREAKDOWN: "plan",
+  READY_FOR_EXECUTION: "plan",
   EXECUTING: "execute",
-  ENGINEERING_REVIEW: "engineering_review",
+  ENGINEERING_REVIEW: "eng-review",
   REVIEWING: "review",
   VALIDATING: "validate",
   COMPLETED: "validate",
@@ -53,7 +57,7 @@ export default function WorkflowPage() {
 
   const refreshWorkflow = () => setRefreshKey(k => k + 1);
 
-  const [unresolvedDrift, setUnresolvedDrift] = useState(false);
+  const [rawEvents, setRawEvents] = useState<StoredEvent[]>([]);
 
   useEffect(() => {
     const fetchWorkflow = async () => {
@@ -67,14 +71,6 @@ export default function WorkflowPage() {
             setActiveTab(STATUS_TO_TAB[data.status as WorkflowStatus] || "spec");
           }
         }
-        
-        // Also check for drift
-        const driftRes = await fetch(`/api/drift?workflowId=${params.id}`);
-        if (driftRes.ok) {
-          const driftData = await driftRes.json();
-          const hasUnresolved = driftData.events?.some((e: any) => !e.resolved);
-          setUnresolvedDrift(hasUnresolved);
-        }
       } catch (err) {
         console.error("Failed to load workflow");
       } finally {
@@ -82,11 +78,51 @@ export default function WorkflowPage() {
       }
     };
     
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch(`/api/workflows/${params.id}/events`);
+        if (res.ok) {
+          const data = await res.json();
+          setRawEvents((prev) => {
+            const newEvents = data.events || [];
+            if (prev.length === newEvents.length && JSON.stringify(prev) === JSON.stringify(newEvents)) {
+              return prev;
+            }
+            return newEvents;
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load events");
+      }
+    };
+
     fetchWorkflow();
+    fetchEvents();
+
+    const interval = setInterval(fetchEvents, 3000);
+    return () => clearInterval(interval);
   }, [params.id, refreshKey]);
 
+  const { orchestration, agents } = normalizeEvents(rawEvents);
+
   if (loading) {
-    return <div className="p-8 flex items-center justify-center h-64"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>;
+    return (
+      <div className="p-8 max-w-7xl mx-auto w-full animate-pulse">
+        <div className="h-8 bg-slate-200 dark:bg-white/5 rounded w-1/4 mb-4"></div>
+        <div className="h-4 bg-slate-200 dark:bg-white/5 rounded w-1/3 mb-12"></div>
+        
+        <div className="flex gap-8">
+          <div className="flex-1 space-y-6">
+            <div className="h-10 bg-slate-200 dark:bg-white/5 rounded w-full"></div>
+            <div className="h-64 bg-slate-200 dark:bg-white/5 rounded-2xl w-full"></div>
+          </div>
+          <div className="w-80 space-y-4">
+            <div className="h-32 bg-slate-200 dark:bg-white/5 rounded-2xl w-full"></div>
+            <div className="h-32 bg-slate-200 dark:bg-white/5 rounded-2xl w-full"></div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!workflow) {
@@ -95,110 +131,45 @@ export default function WorkflowPage() {
 
   const specArtifact = workflow.artifacts?.find((a: any) => a.type === "SPEC");
 
+  const mainContent = (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={activeTab}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.2 }}
+      >
+        {activeTab === "spec" && <SpecTab workflowId={workflow.id} artifact={specArtifact} onMutate={refreshWorkflow} onNext={() => setActiveTab("clarify")} />}
+        {activeTab === "clarify" && <ClarifyTab workflowId={workflow.id} onMutate={refreshWorkflow} onRegenerateComplete={() => setActiveTab("spec")} onNext={() => setActiveTab("review")} />}
+        {activeTab === "plan" && <PlanningWorkspace workflowId={workflow.id} specArtifact={specArtifact} planArtifact={workflow.artifacts?.find((a: any) => a.type === "PLAN")} workflowStatus={workflow.status} onMutate={refreshWorkflow} onNext={() => setActiveTab("execute")} />}
+        {activeTab === "execute" && <ExecuteTab workflowId={workflow.id} onMutate={refreshWorkflow} onNext={() => setActiveTab("eng-review")} />}
+        {activeTab === "eng-review" && <EngineeringReviewTab workflowId={workflow.id} onMutate={refreshWorkflow} onNext={() => setActiveTab("review")} />}
+        {activeTab === "review" && <ReviewWorkspace workflowId={workflow.id} workflowStatus={workflow.status} onMutate={refreshWorkflow} onNext={() => setActiveTab("validate")} />}
+        {activeTab === "validate" && <ValidationWorkspace workflowId={workflow.id} workflowStatus={workflow.status} onMutate={refreshWorkflow} onNext={() => {}} onEditSpec={() => setActiveTab("spec")} />}
+        {activeTab === "timeline" && <TimelineTab workflowId={workflow.id} events={rawEvents} orchestration={orchestration} />}
+      </motion.div>
+    </AnimatePresence>
+  );
+
+  let displayEvents = [...rawEvents];
+  
+  // Display real events only
+
   return (
-    <div className="max-w-6xl mx-auto py-8">
-      <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 mb-6 transition-colors">
-        <ArrowLeft className="w-4 h-4" /> Back to Dashboard
-      </Link>
-
+    <>
       <DriftAlerts workflowId={workflow.id} />
+      
+      <WorkspaceShell 
+        header={<WorkspaceHeader workflow={workflow} />}
+        navigation={<PipelineNavigation workflow={workflow} activeTab={activeTab} onTabChange={setActiveTab} />}
+        intelligence={<IntelligenceDrawer activeTab={activeTab} onTabChange={setActiveTab} />}
+        currentStageHeader={<CurrentStage workflow={workflow} activeTab={activeTab} />}
+        mainContent={mainContent}
+        agentActivity={<AgentActivitySidebar agents={displayEvents} />}
+      />
 
-      <div className="mb-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{workflow.name}</h1>
-          
-          {(() => {
-            const WORKFLOW_STEPS = [
-              "DRAFT", "CLARIFYING", "SPEC_REVIEW", "PLANNING", 
-              "TASK_BREAKDOWN", "EXECUTING", "ENGINEERING_REVIEW", 
-              "REVIEWING", "VALIDATING"
-            ];
-            const completedSteps = WORKFLOW_STEPS.includes(workflow.status) 
-              ? WORKFLOW_STEPS.indexOf(workflow.status) 
-              : WORKFLOW_STEPS.length;
-            const totalSteps = WORKFLOW_STEPS.length;
-            
-            const specContent = workflow.artifacts?.find((a: any) => a.type === "SPEC")?.versions?.[0]?.content || "";
-            const planContent = workflow.artifacts?.find((a: any) => a.type === "PLAN")?.versions?.[0]?.content || "";
-            const taskList = workflow.tasks?.map((t: any) => `- [${t.status === 'DONE' ? 'x' : ' '}] **${t.title}** (${t.priority ?? 'medium'} priority)\n  ${t.description ?? ''}`).join("\n") || "";
-            const combinedContent = [
-              `# ${workflow.name}`,
-              `> Generated by SpecForge · ${new Date().toLocaleDateString()}`,
-              "",
-              specContent ? `## 📋 Specification\n\n${specContent}` : "",
-              planContent ? `---\n\n## 🗺️ Implementation Plan\n\n${planContent}` : "",
-              taskList    ? `---\n\n## ✅ Task Breakdown\n\n${taskList}` : "",
-            ].filter(Boolean).join("\n\n");
-            const safeFilename = workflow.name.replace(/[^a-z0-9]/gi, "-").toLowerCase();
-            
-            return (
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
-                  <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-                    {completedSteps} / {totalSteps} Steps Complete
-                  </span>
-                  <div className="w-32 sm:w-48 h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
-                    <div 
-                      className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-700 ease-out" 
-                      style={{ width: `${(completedSteps / totalSteps) * 100}%` }}
-                    />
-                  </div>
-                </div>
-                <ExportMenu 
-                  content={combinedContent} 
-                  filename={safeFilename} 
-                />
-              </div>
-            );
-          })()}
-        </div>
-        <p className="text-slate-500 text-sm">Created {formatDistanceToNow(new Date(workflow.createdAt))} ago</p>
-        
-        <div className="mt-8 overflow-x-auto pb-8">
-          <div className="min-w-[800px] px-4">
-            <PipelineStages currentStatus={workflow.status} />
-          </div>
-        </div>
-      </div>
-
-      <div id="workflow-content">
-        <WorkflowTabs activeTab={activeTab} onTabChange={setActiveTab} workflow={workflow} />
-        
-        <div className="mt-6">
-          {activeTab === "spec" && <SpecTab workflowId={workflow.id} artifact={specArtifact} onMutate={refreshWorkflow} onNext={() => setActiveTab("clarify")} />}
-          {activeTab === "clarify" && <ClarifyTab workflowId={workflow.id} onMutate={refreshWorkflow} onRegenerateComplete={() => setActiveTab("spec")} onNext={() => setActiveTab("review")} />}
-          {activeTab === "plan" && <PlanTab workflowId={workflow.id} specArtifact={specArtifact} planArtifact={workflow.artifacts?.find((a: any) => a.type === "PLAN")} onMutate={refreshWorkflow} onNext={() => setActiveTab("architecture")} />}
-          {activeTab === "architecture" && <ArchitectureTab workflowId={workflow.id} onMutate={refreshWorkflow} />}
-          {activeTab === "knowledge" && <KnowledgeTab workflowId={workflow.id} />}
-          {activeTab === "memory" && <MemoryTab workflowId={workflow.id} />}
-          {activeTab === "graph" && <GraphTab workflowId={workflow.id} />}
-          {activeTab === "traceability" && <TraceabilityTab workflowId={workflow.id} />}
-          {activeTab === "tasks" && <TasksTab workflowId={workflow.id} onMutate={refreshWorkflow} onNext={() => setActiveTab("execute")} />}
-          {activeTab === "execute" && <ExecuteTab workflowId={workflow.id} onMutate={refreshWorkflow} onNext={() => setActiveTab("engineering_review")} />}
-          {activeTab === "engineering_review" && <EngineeringReviewTab workflowId={workflow.id} onMutate={refreshWorkflow} onNext={() => setActiveTab("review")} />}
-          {activeTab === "review" && <ReviewTab workflowId={workflow.id} onMutate={refreshWorkflow} onNext={() => setActiveTab("validate")} />}
-          {activeTab === "validate" && <ValidateTab workflowId={workflow.id} onMutate={refreshWorkflow} onNext={() => setActiveTab("drift")} onEditSpec={() => setActiveTab("spec")} />}
-          {activeTab === "drift" && <DriftTab workflowId={workflow.id} workflowStatus={workflow.status} onMutate={refreshWorkflow} />}
-          {activeTab === "timeline" && <TimelineTab workflowId={workflow.id} />}
-        </div>
-      </div>
-
-      {/* Floating Copilot Widget */}
       <CopilotWidget workflowId={workflow.id} />
-
-      {/* AI Activity Widget (Premium UX Mock) */}
-      <div className="fixed bottom-6 right-6 z-40 animate-in fade-in slide-in-from-bottom-4">
-        <div className="glass-panel border-blue-500/20 bg-black/40 backdrop-blur-md rounded-2xl p-3 flex items-center gap-3 shadow-[0_0_20px_rgba(59,130,246,0.15)] group hover:bg-black/60 transition-colors cursor-default">
-          <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center relative">
-            <Zap className="w-4 h-4 text-blue-400 group-hover:animate-pulse" />
-            <div className="absolute inset-0 border border-blue-500/50 rounded-full animate-[spin_4s_linear_infinite]" />
-          </div>
-          <div className="hidden sm:block pr-2">
-            <div className="text-[10px] uppercase font-bold text-blue-500 tracking-wider">SpecForge Engine</div>
-            <div className="text-xs font-medium text-slate-300">Active · ~142ms latency</div>
-          </div>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }

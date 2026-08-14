@@ -36,7 +36,7 @@ ${tasksData}
 
     const { text } = await gateway.execute({
       capability: "review",
-      system: PromptRegistry.engineeringReview(),
+      system: await PromptRegistry.engineeringReview(),
       prompt,
     });
 

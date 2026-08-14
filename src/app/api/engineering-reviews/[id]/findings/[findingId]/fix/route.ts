@@ -58,7 +58,7 @@ Description: ${finding.description}
 
     const { text } = await gateway.execute({
       capability: "auto_fix",
-      system: PromptRegistry.autoFix(),
+      system: await PromptRegistry.autoFix(),
       prompt,
       });
 

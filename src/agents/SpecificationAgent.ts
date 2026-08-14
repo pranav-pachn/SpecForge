@@ -25,10 +25,10 @@ Create a detailed specification based on the plan and clarifications.
 ${JSON.stringify(ctx.artifacts.planning, null, 2)}
 
 ### Clarifications
-${JSON.stringify(ctx.artifacts.clarification, null, 2)}
+${JSON.stringify(ctx.artifacts.clarify, null, 2)}
 `;
     
-    const augmentedSystem = PromptRegistry.spec() + '\n\n' + engineeringMemory;
+    const augmentedSystem = await PromptRegistry.spec() + '\n\n' + engineeringMemory;
 
     const { object } = await gateway.executeObject({
       capability: this.capability as any,

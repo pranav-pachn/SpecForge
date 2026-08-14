@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     // Call the LLM
     const { text } = await gateway.execute({
       capability: "spec",
-      system: PromptRegistry.specRegenerate(),
+      system: await PromptRegistry.specRegenerate(),
       prompt: userPrompt,
       });
 

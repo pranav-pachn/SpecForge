@@ -34,7 +34,7 @@ Return the ${count} new tasks in the same JSON format as requested in the system
 
     const { text } = await gateway.execute({
       capability: "tasks",
-      system: PromptRegistry.tasks(),
+      system: await PromptRegistry.tasks(),
       prompt,
       });
 

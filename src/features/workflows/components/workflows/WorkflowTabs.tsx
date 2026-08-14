@@ -5,7 +5,7 @@ import { cn } from "@/shared/utils";
 import { useEffect, useRef } from "react";
 
 import { Brain, Network } from "lucide-react";
-export type TabId = 'spec' | 'clarify' | 'review' | 'plan' | 'architecture' | 'knowledge' | 'memory' | 'graph' | 'traceability' | 'tasks' | 'execute' | 'engineering_review' | 'validate' | 'drift' | 'timeline';
+export type TabId = 'spec' | 'clarify' | 'review' | 'plan' | 'architecture' | 'knowledge' | 'memory' | 'graph' | 'traceability' | 'tasks' | 'execute' | 'eng-review' | 'validate' | 'timeline';
 
 interface WorkflowTabsProps {
   activeTab: TabId;
@@ -27,10 +27,9 @@ const TABS = [
   { id: 'traceability', label: '⑨ Traceability', icon: FileText, number: 9 },
   { id: 'tasks', label: '⑩ Tasks', icon: ListTodo, number: 10 },
   { id: 'execute', label: '⑪ Execute', icon: Zap, number: 11 },
-  { id: 'engineering_review', label: '⑫ Eng Review', icon: Activity, number: 12 },
+  { id: 'eng-review', label: '⑫ Eng Review', icon: ShieldCheck, number: 12 },
   { id: 'validate', label: '⑬ Validate', icon: ShieldCheck, number: 13 },
-  { id: 'drift', label: '⑭ Drift', icon: Activity, number: 14 },
-  { id: 'timeline', label: '⑮ Timeline', icon: Clock, number: 15 },
+  { id: 'timeline', label: '⑭ Timeline', icon: Clock, number: 14 },
 ] as const;
 
 export default function WorkflowTabs({ activeTab, onTabChange, workflow }: WorkflowTabsProps) {

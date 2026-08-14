@@ -15,8 +15,8 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext, publisher: 
   await db.$transaction(async (tx) => {
     // 1. SPEC
 
-    if (ctx.artifacts.specification) {
-      const specContent = ctx.artifacts.specification.markdown;
+    if (ctx.artifacts.spec) {
+      const specContent = ctx.artifacts.spec.markdown;
       let specArtifact = await tx.artifact.findFirst({
         where: { workflowId: ctx.input.workflowId, type: "SPEC" },
         include: { versions: { orderBy: { version: "desc" }, take: 1 } },
@@ -64,7 +64,7 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext, publisher: 
         "SPEC", 
         specArtifact.id, 
         specArtifact.versions ? (specArtifact.versions[0]?.version || 0) + 1 : 1, 
-        ctx.artifacts.specification
+        ctx.artifacts.spec
       );
 
       EmbeddingQueue.push({
@@ -74,6 +74,33 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext, publisher: 
         version: specArtifact.versions ? (specArtifact.versions[0]?.version || 0) + 1 : 1,
         content: specContent,
       });
+
+      const oldQuestions = await tx.clarificationQuestion.findMany({
+        where: { versionId: specArtifact.versions[0]?.id }
+      });
+      if (oldQuestions.length > 0) {
+        await tx.clarificationQuestion.updateMany({
+          where: {
+            id: { in: oldQuestions.map((q: any) => q.id) }
+          },
+          data: {
+            versionId: specVersionId as string
+          }
+        });
+      }
+    }
+    
+    if (ctx.artifacts.spec_review && specVersionId) {
+      for (const check of ctx.artifacts.spec_review.checks) {
+        await tx.reviewCheck.create({
+          data: {
+            versionId: specVersionId,
+            type: check.type,
+            status: check.status,
+            description: check.description
+          }
+        });
+      }
     }
 
     // 2. PLAN
@@ -126,9 +153,29 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext, publisher: 
       });
     }
 
+    if (ctx.artifacts.clarify && planVersionId) {
+      await tx.clarificationQuestion.deleteMany({
+        where: { versionId: planVersionId }
+      });
+      const questions = ctx.artifacts.clarify.questions || [];
+      for (const q of questions) {
+        await tx.clarificationQuestion.create({
+          data: {
+            versionId: planVersionId,
+            question: q.question,
+            category: q.category || "General",
+            options: q.options || [],
+            rationale: q.rationale || "",
+            impact: q.impact || {},
+            status: "OPEN"
+          }
+        });
+      }
+    }
+
     // 3. ARCHITECTURE
-    if (ctx.artifacts.architecture) {
-      const archContent = JSON.stringify(ctx.artifacts.architecture, null, 2);
+    if (ctx.artifacts.architect) {
+      const archContent = JSON.stringify(ctx.artifacts.architect, null, 2);
       let archArtifact = await tx.artifact.findFirst({
         where: { workflowId: ctx.input.workflowId, type: "ARCHITECTURE" },
         include: { versions: { orderBy: { version: "desc" }, take: 1 } },
@@ -182,10 +229,19 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext, publisher: 
     }
 
     // 4. TASKS
-    if (ctx.artifacts.tasks && ctx.artifacts.tasks.tasks) {
-      await tx.task.deleteMany({ where: { workflowId: ctx.input.workflowId } });
-      const tasksMap = new Map();
+    if (ctx.artifacts.tasks) {
+      // Idempotency: Clear existing tasks for this workflow before re-generating
+      await tx.taskDependency.deleteMany({
+        where: { task: { workflowId: ctx.input.workflowId } }
+      });
+      await tx.executionPack.deleteMany({
+        where: { workflowId: ctx.input.workflowId }
+      });
+      await tx.task.deleteMany({
+        where: { workflowId: ctx.input.workflowId }
+      });
 
+      const tasksMap = new Map<string, any>();
       for (const t of ctx.artifacts.tasks.tasks) {
         const created = await tx.task.create({
           data: {
@@ -281,6 +337,21 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext, publisher: 
           where: { versionId: specVersionId }
        });
        
+       const findingsToCreate: any[] = [];
+       for (const [category, data] of Object.entries(ctx.artifacts.review.categories)) {
+         for (const item of (data as any).items) {
+           if (item.issue) {
+             findingsToCreate.push({
+               category,
+               severity: item.issue.priority.toLowerCase(),
+               title: item.issue.finding,
+               description: item.issue.suggestion,
+               resolved: false
+             });
+           }
+         }
+       }
+       
        const newReview = await tx.engineeringReview.create({
          data: {
            workflowId: ctx.input.workflowId,
@@ -300,16 +371,29 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext, publisher: 
            performanceData: JSON.stringify(ctx.artifacts.review.categories.performance),
            architectureData: JSON.stringify(ctx.artifacts.review.categories.architecture),
            deploymentData: JSON.stringify(ctx.artifacts.review.categories.deployment),
+           findings: {
+             create: findingsToCreate
+           }
          }
        });
-       
-       // Add findings (for simplicity in MVP, we can leave the nested issues inside the JSON fields)
     }
 
+    const hasTasksCount = await tx.task.count({ where: { workflowId: ctx.input.workflowId } });
+    const hasExecutionPacksCount = await tx.executionPack.count({
+      where: { task: { workflowId: ctx.input.workflowId } }
+    });
+
     // 6. Update workflow status
+    let finalStatus = "VALIDATING";
+    if (ctx.artifacts.clarify && !ctx.artifacts.specification) {
+      finalStatus = "CLARIFYING";
+    } else if (hasTasksCount > 0 && hasExecutionPacksCount === 0) {
+      finalStatus = "TASK_BREAKDOWN";
+    }
+    
     await tx.workflow.update({
       where: { id: ctx.input.workflowId },
-      data: { status: "VALIDATING" }
+      data: { status: finalStatus as any }
     });
   }, { timeout: 30000 });
 

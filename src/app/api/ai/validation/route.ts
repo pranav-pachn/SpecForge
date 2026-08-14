@@ -30,14 +30,19 @@ export async function POST(req: NextRequest) {
 
     if (!specVersionId) return apiError("Spec version not found for validation binding", 400);
 
-    // Collect all requirements defined in tasks
+    // Collect all requirements defined in tasks and spec
     const allRequirements = new Set<string>();
+    
+    // Extract explicit REQ-XX from spec content
+    const specReqMatches = Array.from(specContent.matchAll(/- (REQ-\d+)/g)).map(m => m[1]);
+    specReqMatches.forEach(r => allRequirements.add(r));
+
     workflow.tasks.forEach(t => {
       (t.requirements || []).forEach(r => allRequirements.add(r));
     });
     // Normally, requirements would be extracted directly from the spec. 
-    // Here we use the set of requirements already mapped in tasks as a baseline, 
-    // and rely on the AI missing features check to find completely unmapped spec features.
+    // Here we use the set of requirements already mapped in tasks and the explicit REQ-XX tags as a baseline, 
+    // and rely on the AI missing features check to find completely unmapped spec features without tags.
 
     const context: ValidationContext = {
       workflowId,

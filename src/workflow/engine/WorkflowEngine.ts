@@ -56,6 +56,8 @@ export class WorkflowEngine {
         throw new Error(`Pipeline execution ${state.status.toLowerCase()}`);
       }
       
+      ctx.artifacts = executionContext.artifacts;
+      
       this.eventBus.emit({ 
         type: 'PipelineCompleted', 
         workflowId: ctx.input.workflowId, 

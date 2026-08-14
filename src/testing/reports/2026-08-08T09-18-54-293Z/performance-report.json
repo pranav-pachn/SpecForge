@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-08-08T09:18:54.295Z",
+  "runId": "1675fe07-80f1-446f-8344-a2cff5deef9c",
+  "config": {
+    "maxConcurrentWorkflows": 10,
+    "defaultScenarioCount": 10,
+    "chaosInjectionProbability": 0.1,
+    "performanceThresholds": {
+      "maxLatencyMs": 15000,
+      "maxMemoryMb": 512
+    },
+    "reportsOutputPath": "src/testing/reports",
+    "timeoutMs": 300000
+  },
+  "totalMetrics": 5
+}

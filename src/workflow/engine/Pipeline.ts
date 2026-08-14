@@ -17,23 +17,34 @@ export interface PipelineDefinition {
 export const StandardPipeline: PipelineDefinition = {
   name: "Standard",
   steps: [
-    'planner',
-    'clarifier',
-    'specification',
+    'planning',
+    'clarify',
+    'spec',
+    'spec_review',
     'architect',
-    'task',
+    'tasks',
     'review',
-    'validator'
+    'validation'
   ]
+};
+
+export const InteractiveClarificationPipeline: PipelineDefinition = {
+  name: "InteractiveClarification",
+  steps: ['planning', 'clarify']
+};
+
+export const InteractiveGenerationPipeline: PipelineDefinition = {
+  name: "InteractiveGeneration",
+  steps: ['spec', 'spec_review', 'architect', 'tasks', 'review', 'validation']
 };
 
 export function registerStandardAgents(registry: RuntimeRegistry) {
   registry.register(new AgentAdapter(new PlannerAgent()), { dependencies: [] });
-  registry.register(new AgentAdapter(new ClarifierAgent()), { dependencies: ['planner'] });
-  registry.register(new AgentAdapter(new SpecificationAgent()), { dependencies: ['clarifier'] });
-  registry.register(new AgentAdapter(new ArchitectAgent()), { dependencies: ['specification'] });
+  registry.register(new AgentAdapter(new ClarifierAgent()), { dependencies: ['planning'] });
+  registry.register(new AgentAdapter(new SpecificationAgent()), { dependencies: ['clarify'] });
+  registry.register(new AgentAdapter(new ArchitectAgent()), { dependencies: ['spec'] });
   registry.register(new AgentAdapter(new TaskPlannerAgent()), { dependencies: ['architect'] });
   registry.register(new AgentAdapter(new ReviewerAgent()), { dependencies: ['architect'] });
-  registry.register(new AgentAdapter(new ValidatorAgent()), { dependencies: ['task', 'review'] });
-  registry.register(new AgentAdapter(new SpecificationReviewAgent()), { dependencies: ['specification'] });
+  registry.register(new AgentAdapter(new ValidatorAgent()), { dependencies: ['tasks', 'review'] });
+  registry.register(new AgentAdapter(new SpecificationReviewAgent()), { dependencies: ['spec'] });
 }

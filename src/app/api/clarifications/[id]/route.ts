@@ -12,6 +12,30 @@ export async function PATCH(
   try {
     const { answer, status } = await req.json();
 
+    // Invariant check: verify ownership of the associated workflow
+    const existingQuestion = await db.clarificationQuestion.findUnique({
+      where: { id: params.id },
+      include: {
+        version: {
+          include: {
+            artifact: {
+              include: {
+                workflow: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!existingQuestion) {
+      return apiError("Clarification question not found", 404);
+    }
+
+    if (existingQuestion.version.artifact.workflow.creatorId !== user.id) {
+      return apiError("Unauthorized to modify this clarification question", 403);
+    }
+
     const updateData: any = {};
     if (status) updateData.status = status;
     if (answer !== undefined) {

@@ -1,44 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Activity, Clock, Server, User, Hash, Box } from "lucide-react";
 import { format } from "date-fns";
+import { Server, Hash, User, Box } from "lucide-react";
+import { OrchestrationTimeline } from "../ui/OrchestrationTimeline";
+import { OrchestrationState, StoredEvent } from "@/shared/utils/eventNormalizer";
 
-interface StoredEvent {
-  id: string;
-  type: string;
-  source: string;
-  occurredAt: string;
-  workflowId?: string;
-  sequence: number;
-  userId?: string;
-  correlationId?: string;
-  causationId?: string;
-  status: string;
-  payload: any;
-}
-
-export function TimelineTab({ workflowId }: { workflowId: string }) {
-  const [events, setEvents] = useState<StoredEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function TimelineTab({ workflowId, events = [], orchestration }: { workflowId: string, events?: StoredEvent[], orchestration?: OrchestrationState }) {
   const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const res = await fetch(`/api/workflows/${workflowId}/events`);
-        if (!res.ok) throw new Error("Failed to fetch events");
-        const data = await res.json();
-        setEvents(data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchEvents();
-  }, [workflowId]);
 
   const toggleExpand = (id: string) => {
     setExpandedEvents(prev => {
@@ -70,35 +39,22 @@ export function TimelineTab({ workflowId }: { workflowId: string }) {
     }
   };
 
-  if (loading) {
+  if (!events || events.length === 0) {
     return (
-      <div className="glass-panel p-12 rounded-xl flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="glass-panel p-12 rounded-xl border-red-500/20 flex flex-col items-center justify-center">
-        <Activity className="w-8 h-8 text-red-400 mb-4" />
-        <p className="text-red-400 font-medium">{error}</p>
-      </div>
-    );
-  }
-
-  if (events.length === 0) {
-    return (
-      <div className="glass-panel p-12 rounded-xl flex flex-col items-center justify-center text-slate-400">
-        <Clock className="w-8 h-8 mb-4 opacity-50" />
+      <div className="p-8 text-center text-slate-400 border border-white/5 rounded-xl bg-white/5">
         <p>No events recorded yet.</p>
       </div>
     );
   }
 
   return (
-    <div className="glass-panel p-6 rounded-xl space-y-6">
-      <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
+    <div className="space-y-8">
+      {orchestration && (
+        <OrchestrationTimeline orchestration={orchestration} />
+      )}
+
+      <div className="glass-panel p-6 rounded-xl space-y-6">
+        <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
         <div>
           <h2 className="text-xl font-semibold text-slate-200">Workflow Timeline</h2>
           <p className="text-sm text-slate-400">Chronological history of all events.</p>
@@ -176,6 +132,7 @@ export function TimelineTab({ workflowId }: { workflowId: string }) {
           );
         })}
       </div>
+    </div>
     </div>
   );
 }

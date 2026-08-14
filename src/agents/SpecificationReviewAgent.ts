@@ -30,7 +30,7 @@ Evaluate the specification strictly against these 4 criteria:
 4. CONSISTENCY: Is the spec consistent internally? Are success metrics clearly defined?
 
 ### Specification
-${ctx.artifacts.specification?.markdown || ""}
+${ctx.artifacts.spec?.markdown || ""}
 `;
     
     const { object } = await gateway.executeObject({

@@ -8,7 +8,7 @@ import EngineeringCategoryCard from "../review/EngineeringCategoryCard";
 import EngineeringFindingRow from "@/features/workflows/components/review/EngineeringFindingRow";
 import { SkeletonTable } from "@/shared/components/ui/Skeleton";
 
-export default function EngineeringReviewTab({ workflowId, onMutate, onNext }: { workflowId: string, onMutate?: () => void, onNext?: () => void }) {
+export function EngineeringReviewTab({ workflowId, onMutate, onNext }: { workflowId: string, onMutate?: () => void, onNext?: () => void }) {
   const router = useRouter();
   const [workflow, setWorkflow] = useState<any>(null);
   const [review, setReview] = useState<any>(null);

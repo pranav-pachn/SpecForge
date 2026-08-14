@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     const { text } = await gateway.execute({
       capability: "planning",
-      system: PromptRegistry.plan(),
+      system: await PromptRegistry.plan(),
       prompt,
       });
 

@@ -342,8 +342,8 @@ ${JSON.stringify(tasksList, null, 2)}
       `;
 
       const { text } = await gateway.execute({
-      capability: "spec",
-      system: PromptRegistry.spec(),
+      capability: "validation",
+      system: await PromptRegistry.validation(),
         prompt
       });
 
@@ -364,8 +364,8 @@ ${JSON.stringify(tasksList, null, 2)}
       const prompt = JSON.stringify(tasksList, null, 2);
 
       const { text } = await gateway.execute({
-      capability: "spec",
-      system: PromptRegistry.spec(),
+      capability: "validation",
+      system: await PromptRegistry.validationDuplicate(),
         prompt
       });
 

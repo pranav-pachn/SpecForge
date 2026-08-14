@@ -26,7 +26,7 @@ Be sure to fill out the traceability fields to explain why each feature is neces
 ${ctx.input.rawIdea}
 `;
     
-    const augmentedSystem = PromptRegistry.plan() + '\n\n' + engineeringMemory;
+    const augmentedSystem = await PromptRegistry.plan() + '\n\n' + engineeringMemory;
 
     const { object } = await gateway.executeObject({
       capability: this.capability as any,

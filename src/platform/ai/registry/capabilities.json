@@ -1,0 +1,72 @@
+{
+  "SPECIFICATION": {
+    "profile": "LONG_REASONING",
+    "primary": "gemini-2.5-pro",
+    "fallbacks": ["claude-3-5-sonnet", "llama-3.1-70b"]
+  },
+  "ARCHITECTURE": {
+    "profile": "LONG_REASONING",
+    "primary": "llama-3.1-70b",
+    "fallbacks": ["gemini-2.5-pro", "llama-3.3-70b"]
+  },
+  "REVIEW": {
+    "profile": "FAST_REVIEW",
+    "primary": "mistral-large-latest",
+    "fallbacks": ["llama-3.3-70b-versatile", "claude-3-5-sonnet"]
+  },
+  "VALIDATION": {
+    "profile": "FAST_REVIEW",
+    "primary": "mistral-large-latest",
+    "fallbacks": ["llama-3.3-70b-versatile", "claude-3-5-sonnet"]
+  },
+  "TASK_PLANNING": {
+    "profile": "FAST_STRUCTURED",
+    "primary": "llama-3.3-70b-versatile",
+    "fallbacks": ["mistral-large-latest", "claude-3-5-sonnet"]
+  },
+  "CHAT": {
+    "profile": "FAST_STRUCTURED",
+    "primary": "gemini-2.5-pro",
+    "fallbacks": ["llama-3.3-70b-versatile", "claude-3-5-sonnet"]
+  },
+  "EMBEDDING": {
+    "profile": "EMBEDDING",
+    "primary": "cohere-embed-english-v3.0",
+    "fallbacks": []
+  },
+  "SUMMARIZATION": {
+    "profile": "FAST_STRUCTURED",
+    "primary": "mistral-large-latest",
+    "fallbacks": ["llama-3.3-70b-versatile"]
+  },
+  "REASONING": {
+    "profile": "LONG_REASONING",
+    "primary": "gemini-2.5-pro",
+    "fallbacks": ["claude-3-5-sonnet"]
+  },
+  "DRIFT": {
+    "profile": "FAST_REVIEW",
+    "primary": "mistral-large-latest",
+    "fallbacks": ["llama-3.3-70b-versatile"]
+  },
+  "CLARIFY": {
+    "profile": "FAST_STRUCTURED",
+    "primary": "llama-3.3-70b-versatile",
+    "fallbacks": ["mistral-large-latest"]
+  },
+  "AUTO_FIX": {
+    "profile": "HEAVY_CODE_GEN",
+    "primary": "claude-3-5-sonnet",
+    "fallbacks": ["llama-3.3-70b-versatile"]
+  },
+  "EXECUTION": {
+    "profile": "HEAVY_CODE_GEN",
+    "primary": "llama-3.1-70b",
+    "fallbacks": ["llama-3.3-70b-versatile", "mistral-large-latest"]
+  },
+  "REVIEW_GATE": {
+    "profile": "ROUTING_GATE",
+    "primary": "llama-3.3-70b-versatile",
+    "fallbacks": ["mistral-large-latest"]
+  }
+}

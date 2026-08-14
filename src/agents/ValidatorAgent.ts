@@ -22,13 +22,13 @@ export class ValidatorAgent implements Agent<ValidatorOutput> {
 Explain any discrepancies or issues found during deterministic validation.
 
 ### Specification
-${ctx.artifacts.specification?.markdown}
+${ctx.artifacts.spec?.markdown}
 
 ### Tasks
 ${JSON.stringify(ctx.artifacts.tasks, null, 2)}
 `;
     
-    const augmentedSystem = PromptRegistry.validation() + '\n\n' + engineeringMemory;
+    const augmentedSystem = await PromptRegistry.validation() + '\n\n' + engineeringMemory;
 
     const { object } = await gateway.executeObject({
       capability: this.capability as any,

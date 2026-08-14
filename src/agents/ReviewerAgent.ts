@@ -22,16 +22,16 @@ export class ReviewerAgent implements Agent<ReviewerOutput> {
 Perform a full engineering review of the planned tasks, architecture, and specification.
 
 ### Specification
-${ctx.artifacts.specification?.markdown}
+${ctx.artifacts.spec?.markdown}
 
 ### Architecture
-${JSON.stringify(ctx.artifacts.architecture, null, 2)}
+${JSON.stringify(ctx.artifacts.architect, null, 2)}
 
 ### Tasks
 ${JSON.stringify(ctx.artifacts.tasks, null, 2)}
 `;
     
-    const augmentedSystem = PromptRegistry.engineeringReview() + '\n\n' + engineeringMemory;
+    const augmentedSystem = await PromptRegistry.engineeringReview() + '\n\n' + engineeringMemory;
 
     const { object } = await gateway.executeObject({
       capability: this.capability as any,

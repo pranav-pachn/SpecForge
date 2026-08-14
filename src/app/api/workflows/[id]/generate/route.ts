@@ -4,7 +4,7 @@ import { getAuthenticatedUser, apiError } from "@/infrastructure/services/api-he
 import { WorkflowContext } from "@/workflow/engine/WorkflowContext";
 import { EventBus } from "@/workflow/engine/EventBus";
 import { WorkflowEngine } from "@/workflow/engine/WorkflowEngine";
-import { StandardPipeline } from "@/workflow/engine/Pipeline";
+import { StandardPipeline, InteractiveClarificationPipeline, InteractiveGenerationPipeline } from "@/workflow/engine/Pipeline";
 import { persistPipelineArtifacts } from "@/workflow/artifacts/persistArtifacts";
 
 export const maxDuration = 300; // 5 minutes
@@ -59,7 +59,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const engine = new WorkflowEngine(eventBus);
 
       try {
-        await engine.execute(StandardPipeline, ctx);
+        let pipelineToRun = StandardPipeline;
+        if (body.phase === 'clarify') {
+          pipelineToRun = InteractiveClarificationPipeline;
+        } else if (body.phase === 'generate') {
+          pipelineToRun = InteractiveGenerationPipeline;
+          
+          if (body.clarifications) {
+            ctx.artifacts.clarification = {
+              questions: body.clarifications,
+              confidenceScore: 100
+            };
+          }
+          if (body.planning) {
+             ctx.artifacts.planning = body.planning;
+          }
+        }
+
+        await engine.execute(pipelineToRun, ctx);
         await persistPipelineArtifacts(ctx);
         send('complete', { workflowId });
       } catch (err: any) {

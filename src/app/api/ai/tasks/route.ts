@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     const { text } = await gateway.execute({
       capability: "tasks",
-      system: PromptRegistry.tasks(),
+      system: await PromptRegistry.tasks(),
       prompt,
       });
 
@@ -85,6 +85,14 @@ export async function POST(req: NextRequest) {
             }
           }
         }
+      }
+
+      // Update workflow status
+      if (workflow.status === "PLANNING" || workflow.status === "WAITING_FOR_APPROVAL") {
+        await tx.workflow.update({
+          where: { id: workflowId },
+          data: { status: "TASK_BREAKDOWN" },
+        });
       }
 
       return tasks;

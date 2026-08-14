@@ -19,19 +19,22 @@ export async function POST(req: NextRequest) {
     // Call LLM for clarification questions
     const { text } = await gateway.execute({
       capability: "clarify",
-      system: PromptRegistry.clarify(),
+      system: await PromptRegistry.clarify(),
       prompt: `Analyze this specification and generate clarification questions:\n\n${specContent}`,
     });
 
-    let questions = [];
+    let result: any = {};
     try {
-      // Find JSON array in the response
-      const jsonStr = text.substring(text.indexOf("["), text.lastIndexOf("]") + 1);
-      questions = JSON.parse(jsonStr);
+      // Find JSON object in the response
+      const jsonStr = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
+      result = JSON.parse(jsonStr);
     } catch (e) {
       console.error("Failed to parse AI response", e);
       return apiError("AI generated invalid response format", 500);
     }
+
+    const questions = result.questions || [];
+    const ambiguityScore = result.ambiguityScore || 0;
 
     // Save to database
     const savedQuestions = await db.$transaction(async (tx) => {
@@ -39,6 +42,17 @@ export async function POST(req: NextRequest) {
       await tx.workflow.update({
         where: { id: workflowId },
         data: { status: WorkflowStatus.CLARIFYING },
+      });
+
+      // Update the artifact version with ambiguityScore
+      await tx.artifactVersion.update({
+        where: { id: versionId },
+        data: { ambiguityScore }
+      });
+
+      // Clear any existing questions for this version to prevent duplicates on regenerate
+      await tx.clarificationQuestion.deleteMany({
+        where: { versionId },
       });
 
       // Insert questions
@@ -49,6 +63,9 @@ export async function POST(req: NextRequest) {
             versionId,
             category: q.category,
             question: q.question,
+            options: q.options || [],
+            rationale: q.rationale || "",
+            impact: q.impact || {},
             status: "OPEN",
           },
         });
@@ -57,7 +74,7 @@ export async function POST(req: NextRequest) {
       return created;
     });
 
-    return jsonResponse(savedQuestions, 201);
+    return jsonResponse({ questions: savedQuestions, ambiguityScore }, 201);
   } catch (error) {
     console.error("Clarification error:", error);
     return apiError("Failed to generate clarifications", 500);

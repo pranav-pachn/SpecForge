@@ -22,13 +22,13 @@ export class TaskPlannerAgent implements Agent<TaskPlannerOutput> {
 Create a list of executable tasks based on the specification and architecture.
 
 ### Specification
-${ctx.artifacts.specification?.markdown}
+${ctx.artifacts.spec?.markdown}
 
 ### Architecture
-${JSON.stringify(ctx.artifacts.architecture, null, 2)}
+${JSON.stringify(ctx.artifacts.architect, null, 2)}
 `;
     
-    const augmentedSystem = PromptRegistry.tasks() + '\n\n' + engineeringMemory;
+    const augmentedSystem = await PromptRegistry.tasks() + '\n\n' + engineeringMemory;
 
     const { object } = await gateway.executeObject({
       capability: this.capability as any,

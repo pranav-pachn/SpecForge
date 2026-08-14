@@ -8,6 +8,7 @@ import ExecutionPackCard from "@/features/workflows/components/workflows/Executi
 import { EmptyState } from "@/shared/components/ui/EmptyState";
 import { SkeletonCard } from "@/shared/components/ui/Skeleton";
 import { toast } from "sonner";
+import { VisualDiffViewer } from "@/features/workflows/components/ui/VisualDiffViewer";
 
 export default function ExecuteTab({ workflowId, onMutate, onNext }: { workflowId: string, onMutate?: () => void, onNext?: () => void }) {
   const router = useRouter();
@@ -204,6 +205,10 @@ export default function ExecuteTab({ workflowId, onMutate, onNext }: { workflowI
             );
           })}
         </div>
+      </div>
+
+      <div className="p-6 border-t border-white/10 bg-black/20">
+        <VisualDiffViewer workflowId={workflowId} />
       </div>
 
       <div className="p-6 border-t border-white/10">

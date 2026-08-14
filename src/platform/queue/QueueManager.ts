@@ -8,6 +8,8 @@ export const QueueNames = {
   AI: 'specforge-ai',
   EMBEDDINGS: 'specforge-embeddings',
   INDEXING: 'specforge-indexing',
+  AUTONOMOUS: 'specforge-autonomous',
+  BENCHMARK: 'specforge-benchmark',
 } as const;
 
 export interface EventJob {

@@ -58,8 +58,8 @@ Generate the optimal prompt/execution pack for this tool to implement this task.
 `;
 
       const { text } = await gateway.execute({
-      capability: "spec",
-      system: PromptRegistry.spec(),
+        capability: "execution",
+        system: await PromptRegistry.execution(),
         prompt,
       });
 

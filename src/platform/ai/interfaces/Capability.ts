@@ -1,0 +1,15 @@
+export type Capability = 
+  | 'SPECIFICATION' 
+  | 'ARCHITECTURE' 
+  | 'REVIEW' 
+  | 'VALIDATION'
+  | 'TASK_PLANNING' 
+  | 'CHAT' 
+  | 'EMBEDDING' 
+  | 'SUMMARIZATION'
+  | 'REASONING' 
+  | 'DRIFT' 
+  | 'CLARIFY' 
+  | 'AUTO_FIX' 
+  | 'EXECUTION' 
+  | 'REVIEW_GATE';

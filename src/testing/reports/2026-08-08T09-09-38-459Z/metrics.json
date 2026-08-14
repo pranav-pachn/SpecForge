@@ -1,0 +1,37 @@
+[
+  {
+    "stage": "Integration",
+    "metric": "duration",
+    "value": 0.10690000000005284,
+    "unit": "ms",
+    "timestamp": "2026-08-08T09:09:38.458Z"
+  },
+  {
+    "stage": "Profiling",
+    "metric": "duration",
+    "value": 0.030700000000024374,
+    "unit": "ms",
+    "timestamp": "2026-08-08T09:09:38.458Z"
+  },
+  {
+    "stage": "Chaos",
+    "metric": "duration",
+    "value": 0.024199999999950705,
+    "unit": "ms",
+    "timestamp": "2026-08-08T09:09:38.458Z"
+  },
+  {
+    "stage": "Load",
+    "metric": "duration",
+    "value": 0.10300000000000864,
+    "unit": "ms",
+    "timestamp": "2026-08-08T09:09:38.458Z"
+  },
+  {
+    "stage": "Validation",
+    "metric": "duration",
+    "value": 0.0333999999999719,
+    "unit": "ms",
+    "timestamp": "2026-08-08T09:09:38.459Z"
+  }
+]

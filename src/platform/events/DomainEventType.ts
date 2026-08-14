@@ -32,5 +32,13 @@ export type DomainEventType =
   // Organization Domain
   | "MemberInvited"
   | "MemberJoined"
+  // AI Provider Domain
+  | "AiProviderFailed"
+  | "AiProviderFallback"
+  | "AiProviderRecovered"
+  | "AiRequestCompleted"
+  | "AiTokensConsumed"
+  // Graph/Decision Domain
+  | "DecisionCreated"
   // Wildcard for debugging
   | "*";

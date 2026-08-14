@@ -1,92 +1,71 @@
 "use client";
 
-import { CheckCircle2, AlertTriangle } from "lucide-react";
+import { CheckCircle2, AlertTriangle, ShieldCheck, Zap, Activity } from "lucide-react";
 
 export default function ValidationScoreHero({ report }: { report: any }) {
   if (!report) return null;
 
-  const score = report.overallScore;
-  const isReady = score >= 80;
-  const isWarning = score >= 60 && score < 80;
-
-  const circumference = 2 * Math.PI * 52;
-  const strokeDashoffset = circumference - (circumference * score) / 100;
-
-  const ringColor = isReady ? "#8b5cf6" : isWarning ? "#f59e0b" : "#ef4444";
-  const bgGlow = isReady
-    ? "shadow-purple-100 dark:shadow-purple-900/20"
+  const { confidence, risk, recommendation } = report;
+  
+  const isSafe = recommendation === "SAFE_TO_APPLY";
+  const isWarning = recommendation === "NEEDS_REVIEW";
+  
+  const bgGlow = isSafe
+    ? "shadow-green-500/20"
     : isWarning
-    ? "shadow-yellow-100 dark:shadow-yellow-900/20"
-    : "shadow-red-100 dark:shadow-red-900/20";
-
-  const scoreBreakdown = [
-    { label: 'Coverage',     weight: '35%', score: report.coverageScore },
-    { label: 'Task Mapping', weight: '20%', score: report.taskMappingScore },
-    { label: 'Acceptance',   weight: '15%', score: report.acceptanceScore },
-    { label: 'Execution',    weight: '15%', score: report.executionScore },
-    { label: 'Dependencies', weight: '10%', score: report.dependencyScore },
-    { label: 'Duplicates',   weight: '5%',  score: report.duplicateScore },
-  ];
+    ? "shadow-yellow-500/20"
+    : "shadow-red-500/20";
 
   return (
-    <div className={`glass border-white/10 rounded-2xl border border-white/10 shadow-lg ${bgGlow} p-6 md:p-8 flex flex-col md:flex-row items-center gap-8`}>
-      <div className="flex flex-col items-center justify-center shrink-0">
-        <div className="relative">
-          <svg width="140" height="140" className="-rotate-90" viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" strokeWidth="10" className="text-slate-100 dark:text-slate-800" />
-            <circle
-              cx="60" cy="60" r="52"
-              fill="none"
-              stroke={ringColor}
-              strokeWidth="10"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-              style={{ transition: 'stroke-dashoffset 1s ease-in-out' }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-5xl font-black text-slate-900 dark:text-slate-100 tabular-nums">{score}</span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">/ 100</span>
+    <div className={`glass border-white/10 rounded-2xl border shadow-xl ${bgGlow} overflow-hidden`}>
+      <div className="bg-slate-900/50 p-4 border-b border-white/5 flex items-center justify-center">
+        <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Validation Result</h3>
+      </div>
+      
+      <div className="p-8 md:p-12 flex flex-col items-center justify-center gap-8 text-center relative overflow-hidden">
+        {/* Background Decorative Rings */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+           <div className={`w-[400px] h-[400px] rounded-full border-4 ${isSafe ? 'border-green-500' : 'border-yellow-500'}`} />
+        </div>
+        
+        <div className="flex items-center gap-12 md:gap-24 relative z-10">
+          {/* Confidence */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-indigo-600">
+              {confidence.overall}%
+            </div>
+            <div className="flex items-center gap-1.5 text-sm font-bold text-slate-400 uppercase tracking-widest">
+              <Activity className="w-4 h-4 text-blue-500" /> Confidence
+            </div>
+          </div>
+          
+          {/* Divider */}
+          <div className="w-px h-24 bg-gradient-to-b from-transparent via-white/20 to-transparent hidden md:block" />
+          
+          {/* Risk */}
+          <div className="flex flex-col items-center gap-2">
+            <div className={`text-5xl md:text-6xl font-black ${
+              risk.level === 'LOW' ? 'text-green-400' : 
+              risk.level === 'MEDIUM' ? 'text-yellow-400' : 'text-red-400'
+            }`}>
+              {risk.level}
+            </div>
+            <div className="flex items-center gap-1.5 text-sm font-bold text-slate-400 uppercase tracking-widest">
+              <ShieldCheck className="w-4 h-4 text-slate-500" /> Risk
+            </div>
           </div>
         </div>
-        <div className={`mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold ${
-          isReady
-            ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400'
+        
+        {/* Recommendation Badge */}
+        <div className={`mt-4 inline-flex items-center gap-3 px-6 py-3 rounded-full text-lg font-bold shadow-lg ${
+          isSafe
+            ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 border border-green-500/30'
             : isWarning
-            ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-500'
-            : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+            ? 'bg-gradient-to-r from-yellow-500/20 to-amber-500/20 text-yellow-400 border border-yellow-500/30'
+            : 'bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-400 border border-red-500/30'
         }`}>
-          {isReady ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-          {isReady ? 'Fully Verified' : isWarning ? 'Needs Attention' : 'Validation Failed'}
-        </div>
-      </div>
-
-      <div className="flex-1 w-full space-y-4">
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Score Breakdown</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-          {scoreBreakdown.map(({ label, weight, score: s }) => {
-            let barColor = 'bg-purple-500';
-            if (s < 80) barColor = 'bg-yellow-500';
-            if (s < 50) barColor = 'bg-red-500';
-            return (
-              <div key={label}>
-                <div className="flex justify-between items-baseline mb-1.5">
-                  <span className="text-sm font-semibold text-slate-300">{label}</span>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-xs text-slate-400">{weight}</span>
-                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100 tabular-nums w-6 text-right">{s}</span>
-                  </div>
-                </div>
-                <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${barColor} rounded-full transition-all duration-700`}
-                    style={{ width: `${s}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
+          {isSafe ? <CheckCircle2 className="w-6 h-6" /> : <AlertTriangle className="w-6 h-6" />}
+          {isSafe ? '✓ SAFE TO APPLY' : recommendation.replace(/_/g, ' ')}
         </div>
       </div>
     </div>

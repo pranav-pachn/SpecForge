@@ -57,7 +57,7 @@ Please generate the product-ready feature specification using the required 12-se
     // Call the LLM
     const { text } = await gateway.execute({
       capability: "spec",
-      system: PromptRegistry.spec(),
+      system: await PromptRegistry.spec(),
       prompt: userPrompt,
       });
 

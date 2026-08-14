@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@/platform/auth";
 
 export async function getAuthenticatedUser() {
+  if (process.env.E2E_TEST_USER) {
+    return JSON.parse(process.env.E2E_TEST_USER);
+  }
   const session = await auth();
   if (!session?.user?.id) {
     return null;

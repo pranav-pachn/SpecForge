@@ -21,7 +21,7 @@ ${JSON.stringify(ctx.artifacts.planning, null, 2)}
     
     const { object } = await gateway.executeObject({
       capability: this.capability as any,
-      system: PromptRegistry.clarify(),
+      system: await PromptRegistry.clarify(),
       prompt,
       schema: ClarifierOutputSchema,
     });

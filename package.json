@@ -8,7 +8,17 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "seed:demo": "npx tsx prisma/seed-demo.ts"
+    "seed:demo": "npx tsx prisma/seed-demo.ts",
+    "test-platform": "tsx src/testing/runner/test-platform.ts",
+    "learning:ingest": "tsx src/learning/scripts/ingest.ts",
+    "learning:detect": "tsx src/learning/scripts/detect-patterns.ts",
+    "learning:recommend": "tsx src/learning/scripts/recommend.ts",
+    "learning:experiment": "tsx src/learning/scripts/experiment.ts",
+    "learning:benchmark": "tsx src/learning/scripts/benchmark.ts",
+    "learning:decide": "tsx src/learning/scripts/decide.ts",
+    "learning:adapt": "tsx src/learning/scripts/adapt.ts",
+    "learning:rollback": "tsx src/learning/scripts/rollback.ts",
+    "learning:e2e": "tsx src/learning/scripts/e2e-loop-validation.ts"
   },
   "dependencies": {
     "@ai-sdk/cohere": "^4.0.12",
@@ -20,6 +30,7 @@
     "@openrouter/ai-sdk-provider": "^3.0.0",
     "@prisma/client": "^5.22.0",
     "@tailwindcss/typography": "^0.5.20",
+    "@xyflow/react": "^12.11.2",
     "ai": "^7.0.29",
     "bcryptjs": "^3.0.3",
     "bullmq": "^6.0.8",
@@ -42,17 +53,20 @@
     "tailwind-merge": "^2.2.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/html2pdf.js": "^0.10.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.1",
+    "dotenv": "^17.4.2",
     "eslint": "^8",
     "eslint-config-next": "14.1.3",
     "fs-extra": "^11.3.6",
     "postcss": "^8",
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.23.11",
     "typescript": "^5"
   }
 }
