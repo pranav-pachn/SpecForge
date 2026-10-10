@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
 import { connectorRegistry } from "@/platform/mcp/registry/ConnectorRegistry";
 import { connectorHealthMonitor } from "@/platform/mcp/health/ConnectorHealthMonitor";
 import { db } from "@/platform/storage/db";

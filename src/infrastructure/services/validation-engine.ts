@@ -2,7 +2,7 @@ import { Task, ExecutionPack, TaskDependency } from "@prisma/client";
 import { gateway } from "@/ai/gateway/gateway";
 import { VALIDATION_MISSING_FEATURES_PROMPT, VALIDATION_DUPLICATE_DETECTION_PROMPT } from "@/ai/prompts/validation-prompts";
 import { PromptRegistry } from "@/ai/prompts/registry";
-import { AnalysisCategory, AnalysisIssue, AnalysisResult, computeWeightedScore } from "./analysis-engine";
+import { AnalysisCategory, AnalysisIssue, AnalysisResult, computeWeightedScore, decideValidationStatus } from "./analysis-engine";
 
 export type FullTask = Task & {
   dependencies: TaskDependency[];
@@ -24,10 +24,24 @@ export class ValidationEngine {
     const issues: AnalysisIssue[] = [];
 
     // Run parallel AI checks alongside deterministic checks
-    const [missingFeatures, duplicates] = await Promise.all([
-      this.checkMissingFeaturesAI(context.specContent, context.tasks),
-      this.checkDuplicatesAI(context.tasks),
-    ]);
+    let missingFeatures: any[] = [];
+    let duplicates: any[] = [];
+    let checkErrored = false;
+    try {
+      [missingFeatures, duplicates] = await Promise.all([
+        this.checkMissingFeaturesAI(context.specContent, context.tasks),
+        this.checkDuplicatesAI(context.tasks),
+      ]);
+    } catch (error) {
+      checkErrored = true;
+      issues.push({
+        severity: "critical",
+        category: "coverage",
+        title: "Validation check errored",
+        description: error instanceof Error ? error.message : "An AI validation check failed",
+        recommendation: "Retry validation. Do not treat this run as passed.",
+      });
+    }
 
     // 1. Requirement Coverage
     const coverage = this.checkRequirementCoverage(context.requirements, context.tasks, missingFeatures);
@@ -68,11 +82,15 @@ export class ValidationEngine {
       { weight: 5, score: dups.category.score },
     ]);
 
+    const decision = decideValidationStatus({ overallScore, issues, categories, checkErrored });
+
     return {
       categories,
       overallScore,
       issues,
       generatedAt: new Date(),
+      status: decision.status,
+      vetoReasons: decision.vetoReasons,
     };
   }
 
@@ -102,13 +120,15 @@ export class ValidationEngine {
 
     // Add AI identified missing features
     for (const mf of missingFeaturesAi) {
+      const linked = typeof mf.specSection === "string" ? mf.specSection.match(/REQ-\d+/)?.[0] : undefined;
       items.push({ status: 'warn', label: `Missing Feature: ${mf.feature}`, detail: mf.recommendation });
       issues.push({
         severity: 'warning',
         category: 'coverage',
         title: `Missing Feature: ${mf.feature}`,
         description: `Spec Section: ${mf.specSection}`,
-        recommendation: mf.recommendation
+        linkedRequirementId: linked,
+        recommendation: mf.recommendation || "Add a task that covers this spec behavior."
       });
       missedCount++;
     }

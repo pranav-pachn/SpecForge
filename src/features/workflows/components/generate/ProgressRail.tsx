@@ -24,7 +24,22 @@ export default function ProgressRail({ workflowId, intakeData, onComplete, onErr
   
   const [elapsed, setElapsed] = useState(0);
   const startTimeRef = useRef(Date.now());
-  const hasStartedRef = useRef(false);
+  const propsRef = useRef({ intakeData, onComplete, onError });
+
+  useEffect(() => {
+    propsRef.current = { intakeData, onComplete, onError };
+  }, [intakeData, onComplete, onError]);
+
+  const STAGE_MAP: Record<string, string> = {
+    'planning': 'Planning',
+    'clarify': 'Clarifying',
+    'spec': 'Specification',
+    'spec_review': 'Specification',
+    'architect': 'Architecture',
+    'tasks': 'Task Planning',
+    'review': 'Engineering Review',
+    'validation': 'Validation'
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -34,9 +49,7 @@ export default function ProgressRail({ workflowId, intakeData, onComplete, onErr
   }, []);
 
   useEffect(() => {
-    if (hasStartedRef.current) return;
-    hasStartedRef.current = true;
-
+    const abortController = new AbortController();
     let isSubscribed = true;
 
     const runPipeline = async () => {
@@ -44,7 +57,8 @@ export default function ProgressRail({ workflowId, intakeData, onComplete, onErr
         const response = await fetch(`/api/workflows/${workflowId}/generate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(intakeData),
+          body: JSON.stringify(propsRef.current.intakeData),
+          signal: abortController.signal,
         });
 
         if (!response.ok) {
@@ -78,26 +92,31 @@ export default function ProgressRail({ workflowId, intakeData, onComplete, onErr
               const data = JSON.parse(eventDataRaw);
 
               if (eventType === 'progress') {
-                setStages(prev => ({ ...prev, [data.stage]: data.status }));
+                const mappedStage = STAGE_MAP[data.stage] || data.stage;
+                setStages(prev => ({ ...prev, [mappedStage]: data.status }));
               } else if (eventType === 'complete') {
-                onComplete();
                 isSubscribed = false;
+                propsRef.current.onComplete();
               } else if (eventType === 'error') {
-                onError(data.message);
                 isSubscribed = false;
+                propsRef.current.onError(data.message);
               }
             }
           }
         }
       } catch (err: any) {
-        if (isSubscribed) onError(err.message);
+        if (err.name === 'AbortError') return;
+        if (isSubscribed) propsRef.current.onError(err.message);
       }
     };
 
     runPipeline();
 
-    return () => { isSubscribed = false; };
-  }, [workflowId, intakeData, onComplete, onError]);
+    return () => { 
+      isSubscribed = false; 
+      abortController.abort();
+    };
+  }, [workflowId]);
 
   const orderedStages = intakeData.phase === 'clarify' 
     ? ['Planning', 'Clarifying']

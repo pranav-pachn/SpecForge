@@ -71,4 +71,6 @@ You MUST adhere to the following 12-section template:
 
 ---
 If the user provides explicit constraints, out-of-scope items, or a target tool, ensure those are prominently featured in the relevant sections. If some sections lack details based on the user's input, use your expertise to infer sensible defaults or note them as Open Questions.
+
+Every in-scope requirement in section 5 must carry a stable id REQ-001, REQ-002, and so on, reused verbatim by later tasks. Mark each as MUST, SHOULD, or OPTIONAL. Do not promote uncertain or optional statements ("probably", "if possible") to MUST. Record assumptions separately from confirmed requirements. Answered clarifications override earlier guesses.
 `;

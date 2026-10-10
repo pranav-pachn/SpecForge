@@ -92,12 +92,8 @@ export class PlatformEventBus {
   }
 
   static initializeTransport(): void {
-    if (process.env.REDIS_URL) {
-      console.log('[PlatformEventBus] Initializing BullMQ transport.');
-      this.dispatcher.setTransport(new BullMQTransport());
-    } else {
-      console.log('[PlatformEventBus] REDIS_URL not set. Using synchronous transport.');
-    }
+    console.log('[PlatformEventBus] Initializing BullMQ transport.');
+    this.dispatcher.setTransport(new BullMQTransport());
   }
 
   static getStore(): EventStore {

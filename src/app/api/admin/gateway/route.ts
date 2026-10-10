@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
 import { providerHealthMonitor } from "@/platform/ai/health/ProviderHealthMonitor";
 import { keyManager } from "@/platform/ai/KeyManager";
 import { capabilityRouter } from "@/platform/ai/CapabilityRouter";

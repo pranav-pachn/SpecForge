@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { gateway } from "@/ai/gateway/gateway";
 import { PromptRegistry } from "@/ai/prompts/registry";
 import { WorkflowStatus } from "@prisma/client";
+import { planQuestionMerge } from "@/workflow/clarifications/mergeQuestions";
 
 export async function POST(req: NextRequest) {
   const user = await getAuthenticatedUser();
@@ -34,34 +35,27 @@ export async function POST(req: NextRequest) {
     }
 
     const questions = result.questions || [];
-    const ambiguityScore = result.ambiguityScore || 0;
+    const ambiguityScore = typeof result.ambiguityScore === "number" ? result.ambiguityScore : 0;
 
-    // Save to database
+    // Save to database. ambiguityScore is returned to the client; ArtifactVersion has no column for it.
     const savedQuestions = await db.$transaction(async (tx) => {
-      // Update workflow status to CLARIFYING if not already
       await tx.workflow.update({
         where: { id: workflowId },
         data: { status: WorkflowStatus.CLARIFYING },
       });
 
-      // Update the artifact version with ambiguityScore
-      await tx.artifactVersion.update({
-        where: { id: versionId },
-        data: { ambiguityScore }
-      });
+      const existing = await tx.clarificationQuestion.findMany({ where: { versionId } });
+      const merge = planQuestionMerge(existing, questions);
+      if (merge.deleteIds.length > 0) {
+        await tx.clarificationQuestion.deleteMany({ where: { id: { in: merge.deleteIds } } });
+      }
 
-      // Clear any existing questions for this version to prevent duplicates on regenerate
-      await tx.clarificationQuestion.deleteMany({
-        where: { versionId },
-      });
-
-      // Insert questions
       const created = [];
-      for (const q of questions) {
+      for (const q of merge.create) {
         const createdQ = await tx.clarificationQuestion.create({
           data: {
             versionId,
-            category: q.category,
+            category: q.kind || q.category || "General",
             question: q.question,
             options: q.options || [],
             rationale: q.rationale || "",
@@ -71,7 +65,8 @@ export async function POST(req: NextRequest) {
         });
         created.push(createdQ);
       }
-      return created;
+      const kept = existing.filter((q) => merge.keepIds.includes(q.id));
+      return [...kept, ...created];
     });
 
     return jsonResponse({ questions: savedQuestions, ambiguityScore }, 201);

@@ -6,6 +6,9 @@ import { EventBus } from "@/workflow/engine/EventBus";
 import { WorkflowEngine } from "@/workflow/engine/WorkflowEngine";
 import { StandardPipeline, InteractiveClarificationPipeline, InteractiveGenerationPipeline } from "@/workflow/engine/Pipeline";
 import { persistPipelineArtifacts } from "@/workflow/artifacts/persistArtifacts";
+import { RuntimeRegistry } from "@/runtime/RuntimeRegistry";
+import { registerStandardAgents } from "@/workflow/engine/Pipeline";
+import { isBlockingQuestion } from "@/workflow/clarifications/mergeQuestions";
 
 export const maxDuration = 300; // 5 minutes
 
@@ -28,6 +31,19 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     where: { id: workflowId, creatorId: user.id },
   });
   if (!workflow) return apiError("Workflow not found", 404);
+
+  if (body.phase === "generate") {
+    const openQuestions = await db.clarificationQuestion.findMany({
+      where: { status: "OPEN", version: { artifact: { workflowId } } },
+    });
+    const blocking = openQuestions.filter(isBlockingQuestion);
+    if (blocking.length > 0) {
+      return apiError(
+        `Unresolved blocking clarifications: ${blocking.map((q) => q.id).join(", ")}. Generation is paused.`,
+        409
+      );
+    }
+  }
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -56,6 +72,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         }
       };
 
+      try {
+        registerStandardAgents(RuntimeRegistry.getInstance());
+      } catch (e) {
+        // Already registered
+      }
+
       const engine = new WorkflowEngine(eventBus);
 
       try {
@@ -66,9 +88,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           pipelineToRun = InteractiveGenerationPipeline;
           
           if (body.clarifications) {
-            ctx.artifacts.clarification = {
-              questions: body.clarifications,
-              confidenceScore: 100
+            ctx.artifacts.clarify = {
+              assumptions: [],
+              questions: Array.isArray(body.clarifications) ? body.clarifications : [],
+              confidenceScore: 100,
             };
           }
           if (body.planning) {

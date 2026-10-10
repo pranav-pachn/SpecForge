@@ -16,13 +16,10 @@ export class PermissionGuard {
    * Ranks: OWNER (highest) > ADMIN > MEMBER (lowest)
    */
   static async requireOrgRole(orgId: string, minRole: OrgRole, userId?: string) {
-    if (!userId) {
-      const user = await getAuthenticatedUser();
-      if (!user) this.deny("Not authenticated");
-      userId = user.id;
-    }
+    const resolvedUserId = userId ?? (await getAuthenticatedUser())?.id;
+    if (!resolvedUserId) this.deny("Not authenticated");
 
-    const roles = await PermissionCache.getUserRoles(orgId, userId);
+    const roles = await PermissionCache.getUserRoles(orgId, resolvedUserId);
     
     if (!roles.orgRole) {
       this.deny("Not a member of this organization");
@@ -45,13 +42,10 @@ export class PermissionGuard {
    * Ranks: ADMIN (highest) > EDITOR > VIEWER (lowest)
    */
   static async requireProjectRole(orgId: string, projectId: string, minRole: ProjectRole, userId?: string) {
-    if (!userId) {
-      const user = await getAuthenticatedUser();
-      if (!user) this.deny("Not authenticated");
-      userId = user.id;
-    }
+    const resolvedUserId = userId ?? (await getAuthenticatedUser())?.id;
+    if (!resolvedUserId) this.deny("Not authenticated");
 
-    const roles = await PermissionCache.getUserRoles(orgId, userId);
+    const roles = await PermissionCache.getUserRoles(orgId, resolvedUserId);
 
     // 1. Check for implicit organization-level override
     if (roles.orgRole === "OWNER" || roles.orgRole === "ADMIN") {

@@ -51,7 +51,7 @@ export default function CreateWorkflowModal({
       const wfRes = await fetch("/api/workflows", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: featureName }),
+        body: JSON.stringify({ name: featureName, rawIdea }),
       });
       const wfData = await wfRes.json();
       if (!wfRes.ok) throw new Error(wfData.error || "Failed to create workflow");

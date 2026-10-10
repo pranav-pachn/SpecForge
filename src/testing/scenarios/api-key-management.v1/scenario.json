@@ -1,1 +1,23 @@
-{ "name": "api-key-management" }
+{
+  "id": "api-key-management.v1",
+  "title": "API Key Management System",
+  "humanReviewed": false,
+  "input": {
+    "rawIdea": "API key management. Create keys, show the secret once, then only a hash. Support expiration, revocation, and rotation. Scopes are read, write, and admin, each with an explicit allow-list of operations. Separate rate limits from daily quotas. Record usage and optional IP restrictions. Audit logs are authorized and retained for a stated period. Reject expired and revoked keys on the server. Never log secrets and never return a stored secret. Hash secrets for verification. Encrypt only if the original must be recovered, which it must not. Advanced analytics and generated documentation are out of the first release."
+  },
+  "expectedRequirements": [
+    { "id": "REQ-001", "keywords": ["show the secret once"], "kind": "MUST", "securityRelevant": true },
+    { "id": "REQ-002", "keywords": ["hash"], "kind": "MUST", "securityRelevant": true },
+    { "id": "REQ-003", "keywords": ["revocation"], "kind": "MUST", "securityRelevant": true },
+    { "id": "REQ-004", "keywords": ["read", "write", "admin"], "kind": "MUST", "securityRelevant": true },
+    { "id": "REQ-005", "keywords": ["rate limit"], "kind": "MUST", "securityRelevant": false },
+    { "id": "REQ-006", "keywords": ["quota"], "kind": "MUST", "securityRelevant": false },
+    { "id": "REQ-007", "keywords": ["audit"], "kind": "MUST", "securityRelevant": true },
+    { "id": "REQ-008", "keywords": ["expired"], "kind": "MUST", "securityRelevant": true }
+  ],
+  "requiredOutputs": ["specification", "acceptanceCriteria", "tasks", "tests"],
+  "forbiddenOutcomes": ["return the stored secret", "log the api key", "advanced analytics is in scope", "generated documentation is in scope"],
+  "securityCases": ["Expired and revoked keys are rejected on the server, not only hidden in the UI."],
+  "negativeCases": ["A later GET returns the original secret.", "A revoked key still authenticates."],
+  "clarification": { "mustAskAbout": [], "mustNotAssume": ["the raw secret must be recoverable"] }
+}

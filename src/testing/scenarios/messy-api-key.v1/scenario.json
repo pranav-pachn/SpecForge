@@ -1,0 +1,24 @@
+{
+  "id": "messy-api-key.v1",
+  "title": "Messy API Key Input",
+  "humanReviewed": false,
+  "input": {
+    "rawIdea": "We need API keys so scripts can call us. Keys should probably expire. If possible, generate documentation. Don't overcomplicate the UI. Maybe IP allow lists later. Admins can create keys, I think viewers can too? Not sure about rotation."
+  },
+  "expectedRequirements": [
+    { "id": "REQ-001", "keywords": ["api keys"], "kind": "MUST", "securityRelevant": true },
+    { "id": "REQ-002", "keywords": ["expire"], "kind": "UNCERTAIN", "securityRelevant": true },
+    { "id": "REQ-003", "keywords": ["documentation"], "kind": "OPTIONAL", "securityRelevant": false },
+    { "id": "REQ-004", "keywords": ["overcomplicate"], "kind": "PREFERENCE", "securityRelevant": false },
+    { "id": "REQ-005", "keywords": ["ip allow"], "kind": "FUTURE", "securityRelevant": false },
+    { "id": "REQ-006", "keywords": ["rotation"], "kind": "UNCERTAIN", "securityRelevant": true }
+  ],
+  "requiredOutputs": ["clarification", "specification"],
+  "forbiddenOutcomes": ["expiration is mandatory", "documentation is required", "viewer key creation is confirmed"],
+  "securityCases": ["Do not invent who may create keys."],
+  "negativeCases": ["Uncertain expiration becomes a MUST task without a recorded answer."],
+  "clarification": {
+    "mustAskAbout": ["whether keys expire", "who can create keys", "whether rotation is required"],
+    "mustNotAssume": ["keys must expire", "viewers can create keys", "documentation ships in v1"]
+  }
+}

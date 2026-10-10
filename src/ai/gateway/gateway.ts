@@ -26,6 +26,9 @@ export interface GatewayObjectRequest<T> extends GatewayRequest {
 export interface GatewayObjectResponse<T> {
   object: T;
   cached: boolean;
+  provider: string;
+  model: string;
+  fallbackUsed: boolean;
 }
 
 class LLMGateway {
@@ -191,7 +194,7 @@ class LLMGateway {
           retryCount: 0,
           fallbackUsed: false,
         });
-        return { object: JSON.parse(cachedResult) as T, cached: true };
+        return { object: JSON.parse(cachedResult) as T, cached: true, provider: "cache", model: "memory", fallbackUsed: false };
       }
     }
 
@@ -277,7 +280,13 @@ class LLMGateway {
       fallbackUsed,
     });
 
-    return { object: resultObject as T, cached: false };
+    return {
+      object: resultObject as T,
+      cached: false,
+      provider: finalProvider.provider,
+      model: finalProvider.model,
+      fallbackUsed,
+    };
   }
 }
 

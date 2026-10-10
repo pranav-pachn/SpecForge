@@ -26,8 +26,8 @@ export default function ClarifyTab({ workflowId, onMutate, onRegenerateComplete,
   const fetchData = async (autoGenerate = false) => {
     setLoading(true);
     try {
-      const wfRes = await fetch(`/api/workflows/${workflowId}`);
-      const wfData = await wfRes.json();
+      const res = await fetch(`/api/workflows/${workflowId}`);
+      const wfData = await res.json();
       setWorkflow(wfData);
 
       const spec = wfData.artifacts?.find((a: any) => a.type === "SPEC");
@@ -35,23 +35,11 @@ export default function ClarifyTab({ workflowId, onMutate, onRegenerateComplete,
       setSpecVersionId(versionId);
       setAmbiguityScore(spec?.versions?.[0]?.ambiguityScore || 0);
 
-      let fetchedQuestions: any[] = [];
-      if (versionId) {
-        // Primary lookup by canonical version
-        const qRes = await fetch(`/api/clarifications?versionId=${versionId}`);
-        fetchedQuestions = await qRes.json();
-      } else {
-        // Fallback for recovery
-        const qRes = await fetch(`/api/clarifications?workflowId=${workflowId}`);
-        fetchedQuestions = await qRes.json();
-      }
+      const qRes = await fetch(`/api/clarifications?workflowId=${workflowId}`);
+      const fetchedQuestions = await qRes.json();
       setQuestions(fetchedQuestions);
 
-      // Auto-trigger clarification generation when:
-      // - navigated here fresh (autoGenerate = true)
-      // - no questions exist yet
-      // - the workflow is in CLARIFYING status
-      // - spec actually has content to analyze
+      // Auto-generate if empty and in CLARIFYING state
       const specContent = spec?.versions?.[0]?.content || "";
       if (
         autoGenerate &&
@@ -72,9 +60,7 @@ export default function ClarifyTab({ workflowId, onMutate, onRegenerateComplete,
             }),
           });
           // Re-fetch questions after generation
-          const qRes2 = versionId
-            ? await fetch(`/api/clarifications?versionId=${versionId}`)
-            : await fetch(`/api/clarifications?workflowId=${workflowId}`);
+          const qRes2 = await fetch(`/api/clarifications?workflowId=${workflowId}`);
           setQuestions(await qRes2.json());
           onMutate?.();
         } catch (e) {

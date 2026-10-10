@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
 import { db } from "@/platform/storage/db";
 import { QueueManager } from "@/platform/queue/QueueManager";
 import { WorkflowStatus } from "@prisma/client";

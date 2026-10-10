@@ -12,11 +12,16 @@ export class PlannerAgent implements Agent<PlannerOutput> {
   name = 'Planning';
 
   async execute(ctx: WorkflowContext): Promise<PlannerOutput> {
-    const engineeringMemory = await ContextBuilder.build({
-      profile: new PlanningContext(),
-      workflowId: ctx.input.workflowId,
-      query: ctx.input.rawIdea
-    });
+    let engineeringMemory = "";
+    try {
+      engineeringMemory = await ContextBuilder.build({
+        profile: new PlanningContext(),
+        workflowId: ctx.input.workflowId,
+        query: ctx.input.rawIdea
+      });
+    } catch (e) {
+      console.warn("ContextBuilder failed (likely embedding provider down), using empty memory.");
+    }
 
     const prompt = `
 Create an implementation plan for the following raw idea. 
@@ -28,13 +33,34 @@ ${ctx.input.rawIdea}
     
     const augmentedSystem = await PromptRegistry.plan() + '\n\n' + engineeringMemory;
 
-    const { object } = await gateway.executeObject({
-      capability: this.capability as any,
-      system: augmentedSystem,
-      prompt,
-      schema: PlannerOutputSchema,
-    });
-    
-    return object;
+    try {
+      const { object } = await gateway.executeObject({
+        capability: this.capability as any,
+        system: augmentedSystem,
+        prompt,
+        schema: PlannerOutputSchema,
+      });
+      return object;
+    } catch (e) {
+      console.error("PlannerAgent LLM execution failed, using fallback:", e);
+      return {
+        intent: ctx.input.rawIdea || "Unspecified idea",
+        goals: ["Deliver the core behavior described in the raw idea."],
+        features: [
+          {
+            name: "Core Features",
+            description: "Implementation of the core user idea.",
+            traceability: {
+              derivedFrom: ctx.input.rawIdea || "raw idea",
+              reason: "Fallback feature generated due to LLM unavailability.",
+              confidence: 50,
+              sourceComponent: "User Idea",
+            },
+          },
+        ],
+        constraints: [],
+        risks: ["LLM unavailable; fallback rule-based implementation plan used."],
+      };
+    }
   }
 }

@@ -5,6 +5,8 @@ import { PlatformEventBus } from '@/platform/events/PlatformEventBus';
 import { EventFactory } from '@/platform/events/factory/EventFactory';
 import { EventPublisher } from '@/platform/events/dispatcher/EventPublisher';
 import { GraphBuilder } from '@/intelligence/graph/GraphBuilder';
+import { engineeringReviewStatus } from "@/infrastructure/services/analysis-engine";
+import { planQuestionMerge } from "@/workflow/clarifications/mergeQuestions";
 
 
 
@@ -154,21 +156,27 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext, publisher: 
     }
 
     if (ctx.artifacts.clarify && planVersionId) {
-      await tx.clarificationQuestion.deleteMany({
-        where: { versionId: planVersionId }
-      });
       const questions = ctx.artifacts.clarify.questions || [];
-      for (const q of questions) {
+      const existing = await tx.clarificationQuestion.findMany({
+        where: { versionId: planVersionId },
+      });
+      const merge = planQuestionMerge(existing, questions);
+      if (merge.deleteIds.length > 0) {
+        await tx.clarificationQuestion.deleteMany({
+          where: { id: { in: merge.deleteIds } },
+        });
+      }
+      for (const q of merge.create) {
         await tx.clarificationQuestion.create({
           data: {
             versionId: planVersionId,
             question: q.question,
-            category: q.category || "General",
+            category: q.kind || q.category || "General",
             options: q.options || [],
             rationale: q.rationale || "",
             impact: q.impact || {},
-            status: "OPEN"
-          }
+            status: "OPEN",
+          },
         });
       }
     }
@@ -235,7 +243,7 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext, publisher: 
         where: { task: { workflowId: ctx.input.workflowId } }
       });
       await tx.executionPack.deleteMany({
-        where: { workflowId: ctx.input.workflowId }
+        where: { task: { workflowId: ctx.input.workflowId } }
       });
       await tx.task.deleteMany({
         where: { workflowId: ctx.input.workflowId }
@@ -364,7 +372,7 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext, publisher: 
            architectureScore: ctx.artifacts.review.categories.architecture.score,
            deploymentScore: ctx.artifacts.review.categories.deployment.score,
            rollbackScore: ctx.artifacts.review.categories.rollback.score,
-           status: ctx.artifacts.review.overallScore >= 80 ? "READY" : "NEEDS_ATTENTION",
+           status: engineeringReviewStatus(ctx.artifacts.review),
            coverageData: JSON.stringify(ctx.artifacts.review.categories.coverage),
            testingData: JSON.stringify(ctx.artifacts.review.categories.testing),
            securityData: JSON.stringify(ctx.artifacts.review.categories.security),
@@ -385,7 +393,7 @@ export async function persistPipelineArtifacts(ctx: WorkflowContext, publisher: 
 
     // 6. Update workflow status
     let finalStatus = "VALIDATING";
-    if (ctx.artifacts.clarify && !ctx.artifacts.specification) {
+    if (ctx.artifacts.clarify && !ctx.artifacts.spec) {
       finalStatus = "CLARIFYING";
     } else if (hasTasksCount > 0 && hasExecutionPacksCount === 0) {
       finalStatus = "TASK_BREAKDOWN";

@@ -68,15 +68,27 @@ export async function POST(req: NextRequest) {
     let targetOrgId = null;
 
     if (!targetProjectId) {
-      const orgMember = await db.orgMember.findFirst({
-        where: { userId: user.id },
-        include: { organization: { include: { projects: true } } },
+      let org = await db.organization.findFirst({
+        where: { ownerId: user.id },
+        include: { projects: true, members: { where: { userId: user.id } } }
       });
 
-      if (!orgMember?.organization.projects[0]) {
-        // Automatically create an org and project if the user doesn't have one
+      if (!org) {
+        // Not an owner. Are they a member of someone else's org?
+        const orgMember = await db.orgMember.findFirst({
+          where: { userId: user.id },
+          include: { organization: { include: { projects: true } } },
+        });
+
+        if (orgMember) {
+          org = { ...orgMember.organization, members: [orgMember] } as any;
+        }
+      }
+
+      if (!org) {
+        // Automatically create an org and project if the user has none
         const orgName = `${user.name || user.email?.split("@")[0] || 'User'}'s Organization`;
-        const newOrg = await db.organization.create({
+        org = await db.organization.create({
           data: {
             name: orgName,
             slug: orgName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Math.random().toString(36).substring(2, 6),
@@ -95,14 +107,42 @@ export async function POST(req: NextRequest) {
               },
             },
           },
-          include: { projects: true },
+          include: { projects: true, members: { where: { userId: user.id } } },
         });
-        targetProjectId = newOrg.projects[0].id;
-        targetOrgId = newOrg.id;
-      } else {
-        targetProjectId = orgMember.organization.projects[0].id;
-        targetOrgId = orgMember.organization.id;
+      } else if (org.members.length === 0) {
+        // Fix corrupted state: User owns org but lacks an OrgMember record
+        const newMember = await db.orgMember.create({
+          data: {
+            userId: user.id,
+            organizationId: org.id,
+            role: "OWNER"
+          }
+        });
+        org.members = [newMember];
       }
+
+      if (!org.projects || org.projects.length === 0) {
+        // User has an org but no projects, create a default project in existing org
+        const newProject = await db.project.create({
+          data: {
+            name: "Default Project",
+            description: "Your first project",
+            organizationId: org.id,
+          }
+        });
+        // Add user as ADMIN to the new project
+        await db.projectMember.create({
+          data: {
+            userId: user.id,
+            projectId: newProject.id,
+            role: "ADMIN"
+          }
+        });
+        org.projects = [newProject];
+      }
+
+      targetProjectId = org.projects[0].id;
+      targetOrgId = org.id;
     } else {
       const proj = await db.project.findUnique({ where: { id: targetProjectId } });
       if (!proj || !proj.organizationId) return apiError("Invalid project");

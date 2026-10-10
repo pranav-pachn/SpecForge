@@ -29,8 +29,14 @@ export async function GET(req: NextRequest) {
     const taskMappingData = dbReport.taskMappingData ? JSON.parse(dbReport.taskMappingData) : null;
     const executionData = dbReport.executionData ? JSON.parse(dbReport.executionData) : null;
 
-    const riskLevel = dbReport.overallScore >= 90 ? 'LOW' : dbReport.overallScore >= 70 ? 'MEDIUM' : 'HIGH';
-    const recommendation = dbReport.overallScore >= 80 ? 'SAFE_TO_APPLY' : 'NEEDS_REVIEW';
+    const hasCritical = dbReport.issues.some((issue) => issue.severity === "critical");
+    const honestPass = (dbReport.status === "PASSED" || dbReport.status === "READY") && !hasCritical;
+    const riskLevel = hasCritical || dbReport.status === "FAILED" || dbReport.status === "INCOMPLETE"
+      ? "HIGH"
+      : dbReport.overallScore >= 90 ? "LOW" : dbReport.overallScore >= 70 ? "MEDIUM" : "HIGH";
+    const recommendation = dbReport.status === "INCOMPLETE"
+      ? "INCOMPLETE"
+      : honestPass ? "SAFE_TO_APPLY" : "NEEDS_REVIEW";
     
     const engReview = await db.engineeringReview.findFirst({
       where: { workflowId },
@@ -63,7 +69,7 @@ export async function GET(req: NextRequest) {
         databaseChanges: 0
       },
       evaluation: {
-        correctness: { passed: dbReport.overallScore >= 80, score: dbReport.overallScore },
+        correctness: { passed: honestPass, score: dbReport.overallScore, status: dbReport.status },
         security: { 
           passed: securityScore !== null ? securityScore >= 80 : false,
           score: securityScore ?? 0,

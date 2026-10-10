@@ -54,7 +54,7 @@ async function main() {
 
     const result = await stage.execute(context);
     if (!result.passed) {
-      logger.error(`❌ Stage '${stageName}' failed catastrophically.`);
+      logger.error(`Stage '${stageName}' did not pass (${result.status ?? 'FAILED'}): ${result.message ?? 'no message'}`);
       process.exit(1);
     }
   }

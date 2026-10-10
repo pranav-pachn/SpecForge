@@ -112,7 +112,7 @@ export function VisualDiffViewer({ workflowId }: { workflowId: string }) {
                 <div className="space-y-2">
                   {diff.executionActions.map((action, i) => (
                     <div key={i} className="text-sm text-slate-300 bg-black/20 p-3 rounded-lg border border-white/5">
-                      "{action}"
+                      {`"${action}"`}
                     </div>
                   ))}
                 </div>

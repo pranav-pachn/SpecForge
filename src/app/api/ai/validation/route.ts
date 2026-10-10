@@ -2,6 +2,7 @@ import { db } from "@/platform/storage/db";
 import { getAuthenticatedUser, jsonResponse, apiError } from "@/infrastructure/services/api-helpers";
 import { NextRequest } from "next/server";
 import { ValidationEngine, ValidationContext } from "@/infrastructure/services/validation-engine";
+import { extractRequirementIds } from "@/testing/evaluation/requirements";
 
 export async function POST(req: NextRequest) {
   const user = await getAuthenticatedUser();
@@ -34,8 +35,7 @@ export async function POST(req: NextRequest) {
     const allRequirements = new Set<string>();
     
     // Extract explicit REQ-XX from spec content
-    const specReqMatches = Array.from(specContent.matchAll(/- (REQ-\d+)/g)).map(m => m[1]);
-    specReqMatches.forEach(r => allRequirements.add(r));
+    extractRequirementIds(specContent).forEach((id) => allRequirements.add(id));
 
     workflow.tasks.forEach(t => {
       (t.requirements || []).forEach(r => allRequirements.add(r));
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
           executionScore: catMap['execution']?.score || 0,
           dependencyScore: catMap['dependency']?.score || 0,
           duplicateScore: catMap['duplicate']?.score || 0,
-          status: result.overallScore >= 80 ? "READY" : "NEEDS_ATTENTION",
+          status: result.status ?? "INCOMPLETE",
           
           coverageData: JSON.stringify(catMap['coverage']),
           taskMappingData: JSON.stringify(catMap['taskMapping']),

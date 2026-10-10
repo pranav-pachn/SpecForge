@@ -1,0 +1,21 @@
+{
+  "id": "conflicting-requirements.v1",
+  "title": "Conflicting or Incomplete Requirements",
+  "humanReviewed": false,
+  "input": {
+    "rawIdea": "API keys. Viewers must be able to create and revoke any key. Also only admins can create keys and viewers have no key access. Authentication might be the session cookie or a separate token. We have not decided. The settings page layout can proceed."
+  },
+  "expectedRequirements": [
+    { "id": "REQ-001", "keywords": ["viewers"], "kind": "MUST", "securityRelevant": true },
+    { "id": "REQ-002", "keywords": ["admins"], "kind": "MUST", "securityRelevant": true },
+    { "id": "REQ-003", "keywords": ["settings page"], "kind": "MUST", "securityRelevant": false }
+  ],
+  "requiredOutputs": ["clarification", "specification"],
+  "forbiddenOutcomes": ["viewers can create keys is confirmed", "session cookie authentication is confirmed"],
+  "securityCases": ["Do not pick a winner between viewer and admin key permissions."],
+  "negativeCases": ["Planning proceeds for key creation while the permission conflict is open."],
+  "clarification": {
+    "mustAskAbout": ["who can create keys", "which authentication mechanism"],
+    "mustNotAssume": ["viewers can create keys", "session cookies are the key auth mechanism"]
+  }
+}

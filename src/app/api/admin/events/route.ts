@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
 import { db } from "@/platform/storage/db";
 // Let me verify if StreamManager exists in src/platform/events/transport or src/runtime/streaming.
 // I will just implement the GET fetching last 50 events for now.

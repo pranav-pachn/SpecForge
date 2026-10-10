@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/platform/storage/db";
 import { getAuthenticatedUser, apiError, jsonResponse } from "@/infrastructure/services/api-helpers";
 import { ValidationEngine, ValidationContext, FullTask } from "@/infrastructure/services/validation-engine";
+import { extractRequirementIds } from "@/testing/evaluation/requirements";
 
 export async function POST(req: NextRequest) {
   const user = await getAuthenticatedUser();
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
   }
 
   const specContent = specArtifact.versions[0].content;
-  const requirements: string[] = []; // Simple extraction or empty array for now
+  const requirements = extractRequirementIds(specContent);
 
   const ctx: ValidationContext = {
     workflowId,
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
       executionScore: getCat('execution')?.score || 0,
       dependencyScore: getCat('dependency')?.score || 0,
       duplicateScore: getCat('duplicate')?.score || 0,
-      status: result.overallScore >= 80 ? "PASSED" : "FAILED",
+      status: result.status ?? "INCOMPLETE",
       coverageData: JSON.stringify(getCat('coverage')),
       taskMappingData: JSON.stringify(getCat('taskMapping')),
       acceptanceData: JSON.stringify(getCat('acceptance')),

@@ -80,22 +80,22 @@ export async function PATCH(
 
         // Approval Gate: CLARIFYING -> SPEC_REVIEW
         if (currentStatus === 'CLARIFYING' && status === 'SPEC_REVIEW') {
-          const specArtifact = await db.artifact.findFirst({
-            where: { workflowId: params.id, type: 'SPEC' },
-            include: { versions: { orderBy: { version: 'desc' }, take: 1 } }
-          });
-          const versionId = specArtifact?.versions?.[0]?.id;
-          if (versionId) {
-            const questions = await db.clarificationQuestion.findMany({
-              where: { versionId }
-            });
-            const requiredUnanswered = questions.filter(
-              q => q.impact && (q.impact as any).isRequired === true && q.status === 'OPEN'
-            ).length;
-            
-            if (requiredUnanswered > 0) {
-              return apiError(`Cannot proceed: ${requiredUnanswered} required decisions are still open.`, 422);
+          const questions = await db.clarificationQuestion.findMany({
+            where: {
+              version: {
+                artifact: {
+                  workflowId: params.id
+                }
+              }
             }
+          });
+          
+          const requiredUnanswered = questions.filter(
+            q => q.impact && (q.impact as any).isRequired === true && q.status === 'OPEN'
+          ).length;
+          
+          if (requiredUnanswered > 0) {
+            return apiError(`Cannot proceed: ${requiredUnanswered} required decisions are still open.`, 422);
           }
         }
 

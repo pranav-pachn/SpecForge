@@ -103,7 +103,7 @@ export default function PlaygroundsPage() {
               disabled={loading !== null}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
             >
-              {loading === "CONTEXT" ? <span className="animate-pulse">Retrieving...</span> : <><Play className="w-4 h-4" /> Search "Why Redis?"</>}
+              {loading === "CONTEXT" ? <span className="animate-pulse">Retrieving...</span> : <><Play className="w-4 h-4" /> {`Search "Why Redis?"`}</>}
             </button>
           </div>
         </div>

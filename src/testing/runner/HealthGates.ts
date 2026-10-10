@@ -17,23 +17,37 @@ export const STRICT_THRESHOLDS: HealthThresholds = {
   queueFailures: 0
 };
 
+const REQUIRED_METRICS: Array<{ name: string; min: keyof HealthThresholds; higherIsBetter: boolean }> = [
+  { name: 'integration_success', min: 'integrationSuccess', higherIsBetter: true },
+  { name: 'validation_accuracy', min: 'validationAccuracy', higherIsBetter: true },
+  { name: 'chaos_recovery', min: 'chaosRecovery', higherIsBetter: true },
+  { name: 'memory_consistency', min: 'memoryConsistency', higherIsBetter: true },
+  { name: 'queue_failures', min: 'queueFailures', higherIsBetter: false },
+];
+
 export class HealthGates {
   static evaluate(metrics: MetricsRegistry, thresholds: HealthThresholds, logger: Logger): boolean {
-    logger.info('[HealthGates] Evaluating platform health metrics against strict thresholds...');
-    
-    // In a real implementation, we would extract the values from the MetricsRegistry
-    // and compare them with the thresholds. 
-    // Example: const intMetrics = metrics.getMetricsByName('integration_success');
-    // For scaffolding, we assume they pass if stages didn't throw uncaught exceptions.
-    
-    const passed = true; 
+    logger.info('[HealthGates] Evaluating recorded metrics. Missing metrics fail.');
 
-    if (passed) {
-      logger.info('[HealthGates] All thresholds met. Platform is healthy. ✅');
-    } else {
-      logger.error('[HealthGates] Health gates failed. Platform is unstable. ❌');
+    const failures: string[] = [];
+    for (const required of REQUIRED_METRICS) {
+      const samples = metrics.getMetricsByName(required.name);
+      if (samples.length === 0) {
+        failures.push(`${required.name} was not recorded`);
+        continue;
+      }
+      const value = samples[samples.length - 1].value;
+      const threshold = thresholds[required.min];
+      const ok = required.higherIsBetter ? value >= threshold : value <= threshold;
+      if (!ok) failures.push(`${required.name}=${value} did not meet ${String(required.min)}=${threshold}`);
     }
 
-    return passed;
+    if (failures.length === 0) {
+      logger.info('[HealthGates] All recorded thresholds met.');
+      return true;
+    }
+
+    for (const failure of failures) logger.error(`[HealthGates] ${failure}`);
+    return false;
   }
 }

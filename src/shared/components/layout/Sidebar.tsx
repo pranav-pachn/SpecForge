@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   FileText, 
-  GitPullRequest, 
+  GitPullRequest,
+  Github, 
   LayoutDashboard, 
   Settings,
   ShieldCheck,
@@ -45,6 +46,30 @@ export default function Sidebar() {
               <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 px-3 mt-4">
                 Workspace
               </div>
+              <Link
+                href="/code-reviews"
+                onClick={() => setIsOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  pathname.startsWith("/code-reviews")
+                    ? "bg-blue-500/20 text-blue-300 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+                    : "text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent"
+                }`}
+              >
+                <GitPullRequest className="w-5 h-5" />
+                Code Reviews
+              </Link>
+              <Link
+                href="/repositories"
+                onClick={() => setIsOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  pathname.startsWith("/repositories")
+                    ? "bg-blue-500/20 text-blue-300 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+                    : "text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent"
+                }`}
+              >
+                <Github className="w-5 h-5" />
+                Repositories
+              </Link>
               <Link 
                 href="/dashboard"
                 onClick={() => setIsOpen(false)}

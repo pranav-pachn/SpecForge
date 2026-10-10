@@ -10,6 +10,9 @@
     "postinstall": "prisma generate",
     "seed:demo": "npx tsx prisma/seed-demo.ts",
     "test-platform": "tsx src/testing/runner/test-platform.ts",
+    "test:unit": "vitest run tests/unit src",
+    "test:integration": "vitest run tests/integration",
+    "eval:scenarios": "tsx src/testing/evaluation/run-scenarios.ts",
     "learning:ingest": "tsx src/learning/scripts/ingest.ts",
     "learning:detect": "tsx src/learning/scripts/detect-patterns.ts",
     "learning:recommend": "tsx src/learning/scripts/recommend.ts",
@@ -49,8 +52,10 @@
     "react-dom": "^18",
     "react-force-graph-2d": "^1.29.1",
     "react-markdown": "^10.1.0",
+    "redis": "^6.3.0",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^2.2.1"
+    "tailwind-merge": "^2.2.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
@@ -67,6 +72,7 @@
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.23.11",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

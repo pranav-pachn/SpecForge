@@ -12,6 +12,7 @@ Generate critical clarification questions and assumptions based ONLY on the miss
 5. Provide a rough 'impact' map of what architectural areas this question affects (e.g., architecture, database, ui, api - boolean values).
 6. NEW: Mark questions as 'isRequired: true' if leaving them unresolved would block development or introduce severe architectural risk. Mark as 'isRequired: false' for minor clarifications.
 7. Provide assumptions you've made.
+7b. Set kind on every question and assumption-bearing statement: EXPLICIT_REQUIREMENT, PREFERENCE, SUGGESTION, UNCERTAIN, FUTURE, CONFLICT, or MISSING_DECISION. Hedged language ("probably", "if possible", "maybe") is UNCERTAIN or OPTIONAL and must not be written as a confirmed requirement. UI taste ("don't overcomplicate") is PREFERENCE, not an implementation task. CONFLICT and MISSING_DECISION with impact.isRequired true block dependent planning.
 8. Provide traceability back to the original idea or plan.
 
 Return a JSON object matching this schema:

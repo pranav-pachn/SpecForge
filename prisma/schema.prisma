@@ -8,26 +8,29 @@ datasource db {
 }
 
 model User {
-  id                 String                   @id @default(cuid())
-  email              String                   @unique
-  name               String?
-  passwordHash       String?
-  createdAt          DateTime                 @default(now())
-  updatedAt          DateTime                 @updatedAt
-  emailVerified      DateTime?
-  image              String?
-  accounts           Account[]
-  approvalVotes      ApprovalVote[]
-  auditLogs          AuditLog[]
-  comments           Comment[]
-  notifications      Notification[]
-  notificationPrefs  NotificationPreference[]
-  orgMemberships     OrgMember[]
-  ownedOrganizations Organization[]           @relation("OrgOwner")
-  projectMemberships ProjectMember[]
-  sessions           Session[]
-  teamMemberships    TeamMember[]
-  workflows          Workflow[]
+  id                    String                   @id @default(cuid())
+  email                 String                   @unique
+  name                  String?
+  passwordHash          String?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  emailVerified         DateTime?
+  image                 String?
+  accounts              Account[]
+  approvalVotes         ApprovalVote[]
+  auditLogs             AuditLog[]
+  comments              Comment[]
+  notifications         Notification[]
+  notificationPrefs     NotificationPreference[]
+  orgMemberships        OrgMember[]
+  ownedOrganizations    Organization[]           @relation("OrgOwner")
+  projectMemberships    ProjectMember[]
+  sessions              Session[]
+  teamMemberships       TeamMember[]
+  workflows             Workflow[]
+  repositoryConnections RepositoryConnection[]
+  reviewRuns            ReviewRun[]
+  reviewFeedback        ReviewFeedback[]
 }
 
 model Account {
@@ -988,6 +991,233 @@ model AgentExecution {
   workflow    Workflow             @relation(fields: [workflowId], references: [id], onDelete: Cascade)
 
   @@index([workflowId])
+}
+
+// ───────── Code Review product (AI Engineering Judge pivot) ─────────
+// Additive, isolated models for the evidence-driven PR/code review vertical.
+// Names are prefixed to avoid collision with the spec-workflow's existing
+// ReviewCheck / ReviewFinding / EvaluationRun models.
+
+model RepositoryConnection {
+  id             String        @id @default(cuid())
+  userId         String
+  provider       String        @default("github")
+  installationId String?
+  owner          String
+  repo           String
+  permissions    Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pullRequests   PullRequest[]
+
+  @@unique([provider, owner, repo])
+  @@index([userId])
+}
+
+model PullRequest {
+  id           String               @id @default(cuid())
+  connectionId String
+  number       Int
+  title        String
+  url          String
+  baseSha      String
+  headSha      String
+  state        String               @default("open")
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  connection   RepositoryConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  reviewRuns   ReviewRun[]
+
+  @@unique([connectionId, number, headSha])
+  @@index([connectionId])
+}
+
+model ReviewRun {
+  id             String             @id @default(cuid())
+  userId         String
+  pullRequestId  String?
+  source         ReviewSource       @default(MANUAL)
+  status         ReviewRunStatus    @default(QUEUED)
+  outcome        ReviewOutcome?
+  inputKind      String // CODE | DIFF
+  language       String?
+  baseSha        String?
+  headSha        String?
+  provider       String?
+  model          String?
+  configVersion  String?
+  summary         String?
+  decisionReasons String[]           @default([])
+  idempotencyKey  String?            @unique
+  createdAt      DateTime           @default(now())
+  completedAt    DateTime?
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pullRequest    PullRequest?       @relation(fields: [pullRequestId], references: [id], onDelete: SetNull)
+  findings       ReviewRunFinding[]
+  checks         ReviewRunCheck[]
+
+  @@index([userId])
+  @@index([pullRequestId])
+  @@index([status])
+}
+
+model ReviewRunFinding {
+  id               String                  @id @default(cuid())
+  runId            String
+  category         FindingCategory
+  severity         FindingSeverity
+  confidence       FindingConfidence
+  title            String
+  description      String
+  filePath         String?
+  startLine        Int?
+  endLine          Int?
+  evidence         String
+  impact           String
+  suggestedFix     String?
+  source           FindingSource
+  validationStatus FindingValidationStatus @default(UNVERIFIED)
+  fingerprint      String
+  createdAt        DateTime                @default(now())
+  run              ReviewRun               @relation(fields: [runId], references: [id], onDelete: Cascade)
+  feedback         ReviewFeedback[]
+
+  @@unique([runId, fingerprint])
+  @@index([runId])
+}
+
+model ReviewRunCheck {
+  id         String         @id @default(cuid())
+  runId      String
+  analyzer   String
+  status     AnalyzerStatus
+  required   Boolean        @default(false)
+  summary    String?
+  durationMs Int?
+  metadata   Json?
+  createdAt  DateTime       @default(now())
+  run        ReviewRun      @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+}
+
+model ReviewFeedback {
+  id        String           @id @default(cuid())
+  findingId String
+  userId    String
+  verdict   FeedbackVerdict
+  reason    String?
+  createdAt DateTime         @default(now())
+  finding   ReviewRunFinding @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([findingId, userId])
+  @@index([findingId])
+}
+
+model EvaluationCase {
+  id               String   @id @default(cuid())
+  datasetVersion   String
+  slug             String
+  language         String?
+  category         String?
+  inputKind        String // CODE | DIFF
+  inputRef         String // path or inline reference to the case input
+  expectedFindings Json
+  humanReviewed    Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  @@unique([datasetVersion, slug])
+  @@index([datasetVersion])
+}
+
+model ReviewEvaluationRun {
+  id             String   @id @default(cuid())
+  datasetVersion String
+  provider       String
+  model          String
+  promptVersion  String?
+  precision      Float?
+  recall         Float?
+  f1             Float?
+  falsePositives Int?
+  sampleSize     Int?
+  medianLatency  Int?
+  p95Latency     Int?
+  status         String   @default("PENDING")
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  @@index([datasetVersion])
+}
+
+enum ReviewSource {
+  MANUAL
+  GITHUB_PR
+}
+
+enum ReviewRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  INCOMPLETE
+}
+
+enum ReviewOutcome {
+  PASS
+  COMMENT
+  REQUEST_CHANGES
+  INCOMPLETE
+}
+
+enum FindingCategory {
+  BUG
+  SECURITY
+  DESIGN
+  PERFORMANCE
+  MAINTAINABILITY
+  TESTING
+}
+
+enum FindingSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum FindingConfidence {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum FindingSource {
+  AI
+  STATIC_ANALYZER
+  CI
+  MANUAL
+}
+
+enum FindingValidationStatus {
+  VERIFIED
+  UNVERIFIED
+  REJECTED
+}
+
+enum AnalyzerStatus {
+  PASSED
+  FAILED
+  SKIPPED
+  ERROR
+}
+
+enum FeedbackVerdict {
+  ACCEPTED
+  DISMISSED
 }
 
 enum ApprovalPolicy {

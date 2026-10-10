@@ -26,9 +26,13 @@ export function DashboardComposer() {
       if (res.ok) {
         const wf = await res.json();
         router.push(`/workflow/${wf.id}`);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Failed to create workflow:", errorData);
       }
     } catch (err) {
       console.error("Failed to create workflow from composer", err);
+    } finally {
       setIsSubmitting(false);
     }
   };

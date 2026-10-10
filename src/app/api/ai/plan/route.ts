@@ -3,6 +3,7 @@ import { getAuthenticatedUser, jsonResponse, apiError } from "@/infrastructure/s
 import { NextRequest } from "next/server";
 import { gateway } from "@/ai/gateway/gateway";
 import { PromptRegistry } from "@/ai/prompts/registry";
+import { isBlockingQuestion } from "@/workflow/clarifications/mergeQuestions";
 
 export async function POST(req: NextRequest) {
   const user = await getAuthenticatedUser();
@@ -20,6 +21,17 @@ export async function POST(req: NextRequest) {
       where: { id: workflowId, creatorId: user.id },
     });
     if (!workflow) return apiError("Workflow not found", 404);
+
+    const openQuestions = await db.clarificationQuestion.findMany({
+      where: { status: "OPEN", version: { artifact: { workflowId } } },
+    });
+    const blocking = openQuestions.filter(isBlockingQuestion);
+    if (blocking.length > 0) {
+      return apiError(
+        `Unresolved blocking clarifications: ${blocking.map((q) => q.id).join(", ")}. Dependent planning is paused.`,
+        409
+      );
+    }
 
     let prompt = `Please generate an Implementation Plan for the following specification:\n\n### Specification\n${specContent}\n\n`;
     

@@ -1,1 +1,21 @@
-{ "name": "dark-mode" }
+{
+  "id": "dark-mode.v1",
+  "title": "Dark Mode Toggle",
+  "humanReviewed": false,
+  "input": {
+    "rawIdea": "Add a dark mode toggle. Users switch between light and dark from anywhere. The choice persists across refresh and browser restart. Use the operating system preference only when nothing is saved. A saved light theme overrides a dark system preference. No first-render flicker or hydration mismatch. Keep WCAG contrast and keyboard access. Apply the theme to forms, charts, dialogs, and navigation."
+  },
+  "expectedRequirements": [
+    { "id": "REQ-001", "keywords": ["persist"], "kind": "MUST", "securityRelevant": false },
+    { "id": "REQ-002", "keywords": ["operating system"], "kind": "MUST", "securityRelevant": false },
+    { "id": "REQ-003", "keywords": ["light"], "kind": "MUST", "securityRelevant": false },
+    { "id": "REQ-004", "keywords": ["flicker"], "kind": "MUST", "securityRelevant": false },
+    { "id": "REQ-005", "keywords": ["keyboard"], "kind": "MUST", "securityRelevant": false },
+    { "id": "REQ-006", "keywords": ["contrast"], "kind": "MUST", "securityRelevant": false }
+  ],
+  "requiredOutputs": ["specification", "acceptanceCriteria", "architecture", "tasks", "dependencies", "tests"],
+  "forbiddenOutcomes": ["custom theme builder is in scope", "guaranteed no flicker in production"],
+  "securityCases": [],
+  "negativeCases": ["Saved light theme is replaced by a dark operating-system change."],
+  "clarification": { "mustAskAbout": [], "mustNotAssume": ["custom theme builder is required"] }
+}

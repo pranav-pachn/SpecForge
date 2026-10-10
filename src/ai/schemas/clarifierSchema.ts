@@ -12,6 +12,15 @@ export const ClarifierOutputSchema = z.object({
     z.object({
       question: z.string(),
       category: z.string().optional(),
+      kind: z.enum([
+        "EXPLICIT_REQUIREMENT",
+        "PREFERENCE",
+        "SUGGESTION",
+        "UNCERTAIN",
+        "FUTURE",
+        "CONFLICT",
+        "MISSING_DECISION",
+      ]).optional(),
       options: z.array(z.object({
         label: z.string(),
         value: z.string(),

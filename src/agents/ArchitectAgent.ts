@@ -40,7 +40,7 @@ export class ArchitectAgent implements Agent<ArchitectOutput> {
 Please design the system architecture based on this specification:
 
 ### Specification
-${ctx.artifacts.specification?.markdown}
+${ctx.artifacts.spec?.markdown}
 `;
     
     const augmentedSystem = ARCHITECT_SYSTEM_PROMPT + '\n\n' + engineeringMemory;

@@ -1,1 +1,22 @@
-{ "name": "notification-system" }
+{
+  "id": "notification-system.v1",
+  "title": "Real-Time Team Notifications",
+  "humanReviewed": false,
+  "input": {
+    "rawIdea": "Real-time team notifications. Initial events: task assigned, review requested, spec approved, scoped to the team that owns the workflow. Authorize per user and per team. Show unread counts, paginate history, and persist read state. Reconnect websockets and recover missed events. Prevent duplicate delivery and retry transient failures. Only admins can broadcast. Include a load-test plan for a target of 100 concurrent users. Do not claim that target is already met."
+  },
+  "expectedRequirements": [
+    { "id": "REQ-001", "keywords": ["task assigned"], "kind": "MUST", "securityRelevant": false },
+    { "id": "REQ-002", "keywords": ["per team"], "kind": "MUST", "securityRelevant": true },
+    { "id": "REQ-003", "keywords": ["unread"], "kind": "MUST", "securityRelevant": false },
+    { "id": "REQ-004", "keywords": ["reconnect"], "kind": "MUST", "securityRelevant": false },
+    { "id": "REQ-005", "keywords": ["duplicate"], "kind": "MUST", "securityRelevant": false },
+    { "id": "REQ-006", "keywords": ["admin"], "kind": "MUST", "securityRelevant": true },
+    { "id": "REQ-007", "keywords": ["load-test"], "kind": "MUST", "securityRelevant": false }
+  ],
+  "requiredOutputs": ["specification", "acceptanceCriteria", "tasks", "tests"],
+  "forbiddenOutcomes": ["supports 100 concurrent users", "verified at 100 concurrent"],
+  "securityCases": ["A user must not receive another team's notifications by subscribing to an unauthorized room."],
+  "negativeCases": ["Guessing a team room id delivers that team's events."],
+  "clarification": { "mustAskAbout": ["which events ship in the first release"], "mustNotAssume": ["100 concurrent users is already supported"] }
+}

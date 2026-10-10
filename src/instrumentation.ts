@@ -6,15 +6,19 @@ export async function register() {
     const { registerStandardAgents } = await import('./workflow/engine/Pipeline');
     const { RuntimeRegistry } = await import('./runtime/RuntimeRegistry');
 
-    PlatformEventBus.initializeTransport();
+    const { QueueManager } = await import('./platform/queue/QueueManager');
+    const redisUp = await QueueManager.probe();
+    if (redisUp) {
+      PlatformEventBus.initializeTransport();
+      new EventWorker();
+      console.log('[PlatformEventBus] Subscribers and background worker initialized.');
+    } else if (process.env.REDIS_URL) {
+      console.warn('[QueueManager] Redis is not running. Background queues are disabled.');
+    } else {
+      console.log('[PlatformEventBus] REDIS_URL not set. Using synchronous transport.');
+    }
+
     registerSubscribers();
-    
-    // Register agents to the runtime
     registerStandardAgents(RuntimeRegistry.getInstance());
-    
-    // Initialize the worker to listen for events in the background
-    new EventWorker();
-    
-    console.log('[PlatformEventBus] Subscribers and background worker initialized.');
   }
 }

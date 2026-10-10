@@ -1,0 +1,22 @@
+{
+  "id": "requirement-change-drift.v1",
+  "title": "Requirement Change and Drift Detection",
+  "humanReviewed": false,
+  "input": {
+    "rawIdea": "API keys. Original requirement: expiration is optional. Updated requirement: every new key must have an expiration date. Detect the change, name the impacted spec section, schema field, create-key API, tasks, and tests, and leave unrelated tasks alone."
+  },
+  "expectedRequirements": [
+    { "id": "REQ-001", "keywords": ["expiration"], "kind": "MUST", "securityRelevant": true },
+    { "id": "REQ-002", "keywords": ["optional"], "kind": "MUST", "securityRelevant": false }
+  ],
+  "requiredOutputs": ["specification", "tasks", "drift"],
+  "forbiddenOutcomes": ["regenerate every artifact", "simulated drift"],
+  "securityCases": ["A key created after the change without an expiration date is rejected."],
+  "negativeCases": ["The drift event is marked resolved without updating the impacted task."],
+  "clarification": { "mustAskAbout": [], "mustNotAssume": [] },
+  "drift": {
+    "change": "Expiration moves from optional to required on every new key.",
+    "expectImpacted": ["spec expiration section", "key schema", "create-key API", "expiration tests"],
+    "mustPreserve": ["unrelated notification tasks", "unrelated theme tasks"]
+  }
+}
