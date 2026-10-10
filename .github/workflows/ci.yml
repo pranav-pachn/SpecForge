@@ -24,6 +24,8 @@ jobs:
       run: npm ci
       
     - name: Prisma Validate
+      env:
+        DATABASE_URL: postgresql://localhost:5432/specforge?schema=public
       run: npx prisma validate
       
     - name: Typecheck
